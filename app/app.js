@@ -577,6 +577,259 @@ const UI = {
   }
 };
 
+// ===== Region Auto-Calculator =====
+const RegionEngine = {
+  // University → City/Area mapping (order matters: more specific first)
+  UNIVERSITY_DB: [
+    // 안산
+    { kw: ['한양대 erica', '한양대학교 erica', '한양 에리카', '한양대에리카', '한양대(erica)'], city: '안산' },
+    { kw: ['안산대', '안산대학'], city: '안산' },
+    { kw: ['신안산대'], city: '안산' },
+    // 수원
+    { kw: ['경기대', '경기대학교'], city: '수원' },
+    { kw: ['아주대', '아주대학교'], city: '수원' },
+    { kw: ['성균관대 자연', '성균관대 수원', '성대 수원'], city: '수원' },
+    { kw: ['수원대', '수원대학교'], city: '화성' },
+    { kw: ['협성대', '협성대학교'], city: '수원' },
+    // 서울
+    { kw: ['서울대', '서울대학교'], city: '서울 관악' },
+    { kw: ['연세대', '연세대학교'], city: '서울 서대문' },
+    { kw: ['고려대', '고려대학교'], city: '서울 성북' },
+    { kw: ['성균관대', '성균관대학교', '성대'], city: '서울 종로' },
+    { kw: ['한양대', '한양대학교'], city: '서울 성동' },
+    { kw: ['중앙대 안성'], city: '안성' },
+    { kw: ['중앙대', '중앙대학교'], city: '서울 동작' },
+    { kw: ['경희대 국제', '경희대학교 국제'], city: '용인' },
+    { kw: ['경희대', '경희대학교'], city: '서울 동대문' },
+    { kw: ['한국외대', '한국외국어대', '외대'], city: '서울 동대문' },
+    { kw: ['건국대', '건국대학교'], city: '서울 광진' },
+    { kw: ['세종대', '세종대학교'], city: '서울 광진' },
+    { kw: ['동국대', '동국대학교'], city: '서울 중구' },
+    { kw: ['숭실대', '숭실대학교'], city: '서울 동작' },
+    { kw: ['홍익대', '홍익대학교', '홍대'], city: '서울 마포' },
+    { kw: ['서강대', '서강대학교'], city: '서울 마포' },
+    { kw: ['이화여대', '이화여자대학교', '이대'], city: '서울 서대문' },
+    { kw: ['숙명여대', '숙명여자대학교', '숙대'], city: '서울 용산' },
+    { kw: ['국민대', '국민대학교'], city: '서울 성북' },
+    { kw: ['서울과기대', '서울과학기술대'], city: '서울 노원' },
+    { kw: ['한성대', '한성대학교'], city: '서울 성북' },
+    { kw: ['광운대', '광운대학교'], city: '서울 노원' },
+    { kw: ['서울시립대', '시립대'], city: '서울 동대문' },
+    { kw: ['명지대 용인', '명지대 자연'], city: '용인' },
+    { kw: ['명지대', '명지대학교'], city: '서울 서대문' },
+    { kw: ['서울여대', '서울여자대학교'], city: '서울 노원' },
+    { kw: ['덕성여대', '덕성여자대학교'], city: '서울 도봉' },
+    { kw: ['삼육대', '삼육대학교'], city: '서울 노원' },
+    { kw: ['상명대 천안'], city: '천안' },
+    { kw: ['상명대', '상명대학교'], city: '서울 종로' },
+    { kw: ['한국항공대', '항공대'], city: '고양' },
+    { kw: ['총신대', '총신대학교'], city: '서울 동작' },
+    // 인천
+    { kw: ['인하대', '인하대학교'], city: '인천' },
+    { kw: ['인천대', '인천대학교'], city: '인천' },
+    // 성남/분당
+    { kw: ['가천대 글로벌', '가천대학교 글로벌'], city: '인천' },
+    { kw: ['가천대', '가천대학교'], city: '성남' },
+    // 용인
+    { kw: ['단국대 천안', '단국대학교 천안'], city: '천안' },
+    { kw: ['단국대', '단국대학교'], city: '용인' },
+    { kw: ['강남대', '강남대학교'], city: '용인' },
+    { kw: ['용인대', '용인대학교'], city: '용인' },
+    // 고양/김포
+    { kw: ['김포대'], city: '김포' },
+    // 부천
+    { kw: ['가톨릭대', '가톨릭대학교'], city: '부천' },
+    // 의정부
+    { kw: ['신한대', '신한대학교'], city: '의정부' },
+    // 천안/아산
+    { kw: ['호서대', '호서대학교'], city: '천안' },
+    { kw: ['백석대', '백석대학교'], city: '천안' },
+    { kw: ['남서울대', '남서울대학교'], city: '천안' },
+    { kw: ['순천향대', '순천향대학교'], city: '아산' },
+    { kw: ['한국기술교육대', '한기대', '코리아텍'], city: '천안' },
+    // 안성/평택
+    { kw: ['한경국립대', '한경대', '한경대학교'], city: '안성' },
+    { kw: ['평택대', '평택대학교'], city: '평택' },
+    { kw: ['한신대', '한신대학교'], city: '오산' },
+  ],
+
+  // Hub system: 거점별 접근 가능 지역 (대중교통 기반)
+  HUBS: [
+    { name: '안산',   core: ['안산'], near: ['시흥','군포','의왕','광명'], ext: ['수원','화성','과천','안양'] },
+    { name: '수원',   core: ['수원'], near: ['화성','오산','용인','의왕','동탄'], ext: ['안산','시흥','안양','평택','성남','과천','군포'] },
+    { name: '인천',   core: ['인천','부평','계양','미추홀','연수','남동'], near: ['부천','시흥','김포','광명'], ext: ['안산','안양'] },
+    { name: '서울 강남', core: ['서울 강남','서울 서초','서울 송파'], near: ['서울 강동','서울 동작','과천','성남','하남'], ext: ['서울 관악','서울 용산','용인'] },
+    { name: '서울 강북', core: ['서울 종로','서울 중구','서울 성동'], near: ['서울 동대문','서울 광진','서울 성북','서울 용산'], ext: ['서울 마포','서울 서대문','서울 강남','구리'] },
+    { name: '서울 서부', core: ['서울 마포','서울 서대문','서울 은평'], near: ['서울 영등포','서울 양천','서울 종로','서울 용산'], ext: ['고양','서울 구로','서울 강서','부천','김포'] },
+    { name: '서울 남부', core: ['서울 관악','서울 동작','서울 영등포'], near: ['서울 구로','서울 금천','서울 양천','서울 강남','안양','과천'], ext: ['서울 서초','광명','군포','서울 마포'] },
+    { name: '서울 동부', core: ['서울 광진','서울 강동','서울 송파'], near: ['서울 성동','서울 동대문','하남','구리','남양주'], ext: ['서울 강남','서울 중구','성남'] },
+    { name: '서울 북부', core: ['서울 노원','서울 도봉','서울 강북'], near: ['의정부','서울 성북','서울 중랑','남양주'], ext: ['양주','구리','서울 동대문'] },
+    { name: '고양/파주', core: ['고양','파주'], near: ['김포','서울 은평','서울 마포'], ext: ['서울 서대문','서울 종로','의정부'] },
+    { name: '성남/분당', core: ['성남','분당','판교'], near: ['용인','광주','하남','서울 강남','서울 송파'], ext: ['수원','서울 서초','서울 강동','과천'] },
+    { name: '평택/천안', core: ['평택','천안','아산'], near: ['오산','안성'], ext: ['수원','화성'] },
+    { name: '의정부/북부', core: ['의정부','양주','동두천'], near: ['서울 노원','서울 도봉','포천','남양주'], ext: ['구리','서울 강북'] },
+  ],
+
+  // Normalize city name from free-text input
+  normalizeCity(text) {
+    if (!text) return null;
+    let s = text.trim()
+      .replace(/특별시|광역시|도|자치시|자치도/g, '')
+      .replace(/시$|군$|구$/g, '')
+      .trim();
+    // Map Seoul districts
+    const seoulDistricts = ['강남','서초','송파','강동','관악','동작','영등포','구로','금천','양천','강서','마포','서대문','은평','종로','중구','성동','동대문','광진','성북','용산','노원','도봉','강북','중랑'];
+    for (const d of seoulDistricts) {
+      if (s.includes(d)) return '서울 ' + d;
+    }
+    // Map Incheon districts
+    const incheonDistricts = ['부평','계양','미추홀','연수','남동','서구','중구','동구','부천'];
+    for (const d of incheonDistricts) {
+      if (s.includes(d) && s.includes('인천')) return '인천';
+    }
+    // Strip remaining suffixes
+    s = s.replace(/시|군|구/g, '').trim();
+    // Common aliases
+    const aliases = { '서울': '서울 종로', '분당': '성남', '판교': '성남', '동탄': '화성', '일산': '고양', '산본': '군포', '범계': '안양' };
+    return aliases[s] || s;
+  },
+
+  // Lookup university to get city
+  lookupUniversity(name) {
+    if (!name) return null;
+    const n = name.trim().toLowerCase().replace(/\s+/g, ' ');
+    for (const entry of this.UNIVERSITY_DB) {
+      if (entry.kw.some(k => n.includes(k.toLowerCase()))) {
+        return entry.city;
+      }
+    }
+    return null;
+  },
+
+  // Find which hubs cover a city
+  findHubs(city) {
+    if (!city) return [];
+    const c = city.toLowerCase();
+    return this.HUBS.filter(h =>
+      h.core.some(x => c.includes(x.toLowerCase()) || x.toLowerCase().includes(c)) ||
+      h.near.some(x => c.includes(x.toLowerCase()) || x.toLowerCase().includes(c)) ||
+      h.ext.some(x => c.includes(x.toLowerCase()) || x.toLowerCase().includes(c))
+    );
+  },
+
+  // Calculate activity region from residence + university
+  calculate(residence, universityName) {
+    const residenceCity = this.normalizeCity(residence);
+    const uniCity = this.lookupUniversity(universityName);
+
+    if (!residenceCity && !uniCity) return '';
+
+    // Find hubs for each location
+    const resHubs = this.findHubs(residenceCity);
+    const uniHubs = this.findHubs(uniCity);
+
+    // Find common hubs (both locations covered)
+    let primaryHub = null;
+    if (resHubs.length > 0 && uniHubs.length > 0) {
+      primaryHub = resHubs.find(h => uniHubs.includes(h));
+    }
+    if (!primaryHub) {
+      // Pick the hub closest to the residence (or university if no residence)
+      primaryHub = resHubs[0] || uniHubs[0];
+    }
+    if (!primaryHub) return '';
+
+    // Build reachable cities list
+    const reachable = new Set(primaryHub.core);
+    primaryHub.near.forEach(c => reachable.add(c));
+
+    // If user has a second location in a different hub, add its core too
+    const secondCity = residenceCity && uniCity && residenceCity !== uniCity
+      ? (primaryHub.core.some(c => c === residenceCity || residenceCity.includes(c)) ? uniCity : residenceCity)
+      : null;
+    if (secondCity) {
+      const secondHubs = this.findHubs(secondCity);
+      if (secondHubs.length > 0 && secondHubs[0] !== primaryHub) {
+        secondHubs[0].core.forEach(c => reachable.add(c));
+      }
+    }
+
+    // Format: remove "서울 " prefix for cleaner display within Seoul hubs
+    const hubName = primaryHub.name;
+    const cities = [...reachable]
+      .map(c => c.replace(/^서울 /, ''))
+      .slice(0, 6)
+      .join(', ');
+
+    return `[${hubName} 거점] ${cities}`;
+  }
+};
+
+
+// ===== Specialty Auto-Extractor =====
+const SpecialtyEngine = {
+  // Keyword → Specialty tag mapping
+  KEYWORDS: [
+    { tag: 'Python',       kw: ['파이썬','python','파이선','django','flask','tensorflow','pytorch','keras'] },
+    { tag: 'AI',           kw: ['ai','인공지능','딥러닝','머신러닝','기계학습','객체인식','deep learning','machine learning','자연어처리','nlp','컴퓨터비전','신경망'] },
+    { tag: 'Scratch',      kw: ['스크래치','scratch'] },
+    { tag: '엔트리',       kw: ['엔트리','entry'] },
+    { tag: '아두이노',     kw: ['아두이노','arduino'] },
+    { tag: 'ROS',          kw: ['ros','로봇운영체제'] },
+    { tag: 'CAD',          kw: ['cad','캐드','solidworks','솔리드웍스','autocad','오토캐드','fusion','인벤터','inventor'] },
+    { tag: '3D프린팅',     kw: ['3d프린팅','3d프린터','3d 프린팅','3d 프린터','적층제조'] },
+    { tag: '로봇',         kw: ['로봇','robot','로보틱스','robotics'] },
+    { tag: 'C/C++',        kw: ['c언어','c++','c 언어','c/c++','임베디드'] },
+    { tag: 'Java',         kw: ['자바','java','spring','스프링'] },
+    { tag: 'IoT',          kw: ['iot','사물인터넷'] },
+    { tag: '웹개발',       kw: ['웹개발','html','css','javascript','react','vue','node','웹 개발','프론트엔드','백엔드','풀스택'] },
+    { tag: '앱개발',       kw: ['앱개발','android','ios','flutter','react native','앱 개발','안드로이드','어플','모바일'] },
+    { tag: '라즈베리파이', kw: ['라즈베리파이','라즈베리 파이','raspberry'] },
+    { tag: '드론',         kw: ['드론','drone','uav'] },
+    { tag: '데이터분석',   kw: ['데이터분석','데이터 분석','pandas','r언어','통계','빅데이터','데이터사이언스'] },
+    { tag: '게임개발',     kw: ['게임개발','게임 개발','unity','유니티','unreal','언리얼'] },
+    { tag: '영상편집',     kw: ['영상편집','영상 편집','프리미어','에프터이펙트','영상제작'] },
+    { tag: '코딩교육',     kw: ['코딩교육','코딩 교육','코딩강사','sw교육','소프트웨어 교육','정보교육'] },
+  ],
+
+  // Department → Specialty hint mapping
+  DEPT_HINTS: [
+    { kw: ['컴퓨터','소프트웨어','sw','정보통신','it'], tags: ['Python','코딩교육'] },
+    { kw: ['로봇','메카트로닉스'], tags: ['로봇','아두이노','ROS'] },
+    { kw: ['전자','전기','제어'], tags: ['아두이노','IoT'] },
+    { kw: ['기계','산업디자인'], tags: ['CAD','3D프린팅'] },
+    { kw: ['ai','인공지능','데이터'], tags: ['AI','Python','데이터분석'] },
+    { kw: ['교육','사범'], tags: ['코딩교육'] },
+    { kw: ['디자인','미디어','영상'], tags: ['영상편집'] },
+  ],
+
+  // Extract specialties from career text + department
+  extract(careerText, department) {
+    const found = new Set();
+    const textLower = (careerText || '').toLowerCase().replace(/\s+/g, ' ');
+    const deptLower = (department || '').toLowerCase();
+
+    // Scan career text for keyword matches
+    for (const entry of this.KEYWORDS) {
+      if (entry.kw.some(k => textLower.includes(k.toLowerCase()))) {
+        found.add(entry.tag);
+      }
+    }
+
+    // Add department-based hints (only if career didn't produce results)
+    if (found.size === 0 && deptLower) {
+      for (const hint of this.DEPT_HINTS) {
+        if (hint.kw.some(k => deptLower.includes(k))) {
+          hint.tags.forEach(t => found.add(t));
+        }
+      }
+    }
+
+    return [...found].slice(0, 5).join(', ');
+  }
+};
+
+
 // ===== Upload Module =====
 const Upload = {
   parsedData: [],      // Raw parsed rows from file
@@ -598,6 +851,7 @@ const Upload = {
     { key: 'phone', label: '전화번호', required: false },
     { key: 'email', label: '이메일', required: false },
     { key: 'current_residence', label: '현 거주지', required: false },
+    { key: 'career_history', label: '강의/개발 경력', required: false },
   ],
 
   // Auto-matching rules: file header keywords -> DB field key
@@ -614,6 +868,7 @@ const Upload = {
     'phone': ['전화', '연락처', '핸드폰', '전화번호', 'phone', '휴대폰'],
     'email': ['이메일', '메일', 'email', 'e-mail'],
     'current_residence': ['거주지', '거주', '현 거주지', '주소', '현거주지'],
+    'career_history': ['경력', '강의/개발 경력', '강의 경력', '개발 경력', '진행하셨던', 'career'],
   },
 
   init() {
@@ -820,28 +1075,40 @@ const Upload = {
       return;
     }
 
-    // Build mapped preview data
+    // Build mapped preview data with auto-calculations
     const mapped = this.parsedData.map(row => {
       const result = {};
       for (const field of this.FIELDS) {
         const col = this.columnMapping[field.key];
         result[field.key] = col ? String(row[col] || '').trim() : '';
       }
+      // Auto-calculate activity_region if not directly mapped
+      if (!this.columnMapping['activity_region'] && (result.current_residence || result.university)) {
+        result._auto_region = RegionEngine.calculate(result.current_residence, result.university);
+      }
+      // Auto-calculate specialty if not directly mapped
+      if (!this.columnMapping['specialty'] && (result.career_history || result.department)) {
+        result._auto_specialty = SpecialtyEngine.extract(result.career_history, result.department);
+      }
       return result;
-    }).filter(r => r.name); // Filter out rows with empty name
+    }).filter(r => r.name);
 
     // Check for existing
     const existingNames = new Set(Store.instructors.map(i => i.name));
 
     document.getElementById('previewCount').textContent = `(${mapped.length}명)`;
 
-    // Table head - only show mapped fields
+    // Build display columns: mapped fields + auto-calculated fields
     const mappedFields = this.FIELDS.filter(f => this.columnMapping[f.key]);
-    document.getElementById('previewHead').innerHTML = `<tr>
-      <th>#</th>
-      <th>상태</th>
-      ${mappedFields.map(f => `<th>${f.label}</th>`).join('')}
-    </tr>`;
+    const hasAutoRegion = mapped.some(r => r._auto_region);
+    const hasAutoSpecialty = mapped.some(r => r._auto_specialty);
+
+    let headerHtml = '<tr><th>#</th><th>상태</th>';
+    headerHtml += mappedFields.map(f => `<th>${f.label}</th>`).join('');
+    if (hasAutoRegion) headerHtml += '<th style="color:var(--tier-advanced)">🤖 활동 지역</th>';
+    if (hasAutoSpecialty) headerHtml += '<th style="color:var(--tier-advanced)">🤖 전문성</th>';
+    headerHtml += '</tr>';
+    document.getElementById('previewHead').innerHTML = headerHtml;
 
     // Table body (show up to 50 rows)
     const displayRows = mapped.slice(0, 50);
@@ -852,16 +1119,18 @@ const Upload = {
         ? '<span class="row-badge exists">기존</span>'
         : '<span class="row-badge new">신규</span>';
 
-      return `<tr class="${cls}">
-        <td>${i + 1}</td>
-        <td>${badge}</td>
-        ${mappedFields.map(f => `<td title="${this.escapeHtml(row[f.key])}">${this.escapeHtml(row[f.key]) || '-'}</td>`).join('')}
-      </tr>`;
+      let cells = `<td>${i + 1}</td><td>${badge}</td>`;
+      cells += mappedFields.map(f => `<td title="${this.escapeHtml(row[f.key])}">${this.escapeHtml(row[f.key]) || '-'}</td>`).join('');
+      if (hasAutoRegion) cells += `<td style="color:var(--tier-advanced);font-size:0.75rem" title="${this.escapeHtml(row._auto_region)}">${this.escapeHtml(row._auto_region) || '<span style="color:var(--text-muted)">-</span>'}</td>`;
+      if (hasAutoSpecialty) cells += `<td style="color:var(--tier-advanced);font-size:0.75rem" title="${this.escapeHtml(row._auto_specialty)}">${this.escapeHtml(row._auto_specialty) || '<span style="color:var(--text-muted)">-</span>'}</td>`;
+
+      return `<tr class="${cls}">${cells}</tr>`;
     }).join('');
 
+    const totalCols = mappedFields.length + 2 + (hasAutoRegion ? 1 : 0) + (hasAutoSpecialty ? 1 : 0);
     if (mapped.length > 50) {
       document.getElementById('previewBody').innerHTML += `
-        <tr><td colspan="${mappedFields.length + 2}" style="text-align:center;color:var(--text-muted);padding:var(--space-md)">
+        <tr><td colspan="${totalCols}" style="text-align:center;color:var(--text-muted);padding:var(--space-md)">
           ... 외 ${mapped.length - 50}명 더
         </td></tr>`;
     }
@@ -915,6 +1184,16 @@ const Upload = {
         }
       }
 
+      // ── Auto-calculate activity_region ──
+      if (!data.activity_region && (data.current_residence || data.university)) {
+        data.activity_region = RegionEngine.calculate(data.current_residence, data.university);
+      }
+
+      // ── Auto-calculate specialty ──
+      if (!data.specialty && (data.career_history || data.department)) {
+        data.specialty = SpecialtyEngine.extract(data.career_history, data.department);
+      }
+
       // Check if exists
       const existing = existingNames.get(name);
 
@@ -923,6 +1202,14 @@ const Upload = {
           // Update existing instructor (keep ID, score, tier, penalty)
           const updateData = { ...data };
           delete updateData.instructor_id;
+          // Remove non-DB helper fields
+          delete updateData.career_history;
+          delete updateData.gender;
+          delete updateData.university;
+          delete updateData.department;
+          delete updateData.phone;
+          delete updateData.email;
+          delete updateData.current_residence;
           Store.updateInstructor(existing.instructor_id, updateData);
           updated++;
         } else {
