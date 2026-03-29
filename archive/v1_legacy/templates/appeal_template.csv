@@ -1,0 +1,2 @@
+appeal_id,instructor_id,session_id,submitted_at,appeal_type,appeal_reason,status,reviewer_id,resolution,resolved_at
+APL-20260308-001,205,S-4032,2026-03-08T12:00:00+09:00,assignment_decision,최근 가용시간 반영이 누락된 것 같습니다.,open,,,

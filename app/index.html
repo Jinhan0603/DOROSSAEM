@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="DORO 강사관리 시스템 Ver 2 — 강사 DB 관리 대시보드">
+  <title>DOROSSAEM — 강사관리 시스템</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ─── Header ─── -->
+  <header class="app-header">
+    <div class="app-logo">
+      <div class="app-logo-icon">🎓</div>
+      <h1>DORO<span>SSAEM</span></h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-secondary" id="btnExport">📥 내보내기</button>
+      <button class="btn btn-primary" id="btnAddInstructor">➕ 강사 등록</button>
+    </div>
+  </header>
+
+  <!-- ─── Stats ─── -->
+  <section class="stats-bar" id="statsBar">
+    <div class="stat-card" style="--stat-color: var(--color-primary)">
+      <div class="stat-label">전체 강사</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--status-active)">
+      <div class="stat-label">활동 중</div>
+      <div class="stat-value" id="statActive">0</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--tier-master)">
+      <div class="stat-label">Master</div>
+      <div class="stat-value" id="statMaster">0</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--tier-advanced)">
+      <div class="stat-label">Advanced</div>
+      <div class="stat-value" id="statAdvanced">0</div>
+    </div>
+    <div class="stat-card" style="--stat-color: var(--color-primary-light)">
+      <div class="stat-label">평균 점수</div>
+      <div class="stat-value" id="statAvg">0</div>
+    </div>
+  </section>
+
+  <!-- ─── Toolbar ─── -->
+  <div class="toolbar">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="이름, ID, 전문성, 지역으로 검색..." autocomplete="off">
+    </div>
+    <div class="filter-chips">
+      <button class="chip active" data-filter="all">전체</button>
+      <button class="chip" data-filter="active">활동중</button>
+      <button class="chip" data-filter="Master">👑 Master</button>
+      <button class="chip" data-filter="Advanced">⭐ Advanced</button>
+      <button class="chip" data-filter="General">🔵 General</button>
+      <button class="chip" data-filter="Penalty">🚫 Penalty</button>
+    </div>
+  </div>
+
+  <!-- ─── Table ─── -->
+  <div class="table-container">
+    <table class="data-table" id="instructorTable">
+      <thead>
+        <tr>
+          <th data-sort="name" onclick="UI.handleSort('name')">강사 <span class="sort-arrow">↕</span></th>
+          <th data-sort="tier" onclick="UI.handleSort('tier')">등급 <span class="sort-arrow">↕</span></th>
+          <th data-sort="total_score" onclick="UI.handleSort('total_score')">총점 <span class="sort-arrow">↕</span></th>
+          <th>전문성</th>
+          <th>활동 지역</th>
+          <th data-sort="first_cohort" onclick="UI.handleSort('first_cohort')">기수 <span class="sort-arrow">↕</span></th>
+          <th data-sort="penalty_count" onclick="UI.handleSort('penalty_count')">패널티 <span class="sort-arrow">↕</span></th>
+          <th data-sort="last_updated" onclick="UI.handleSort('last_updated')">업데이트 <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ─── Add/Edit Modal ─── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">강사 등록</h2>
+      <button class="modal-close" id="modalClose">✕</button>
+    </div>
+    <form id="instructorForm">
+      <input type="hidden" id="formMode" value="add">
+      <input type="hidden" id="formId" value="">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="fieldInstructorId">고유 ID</label>
+          <input class="form-input" id="fieldInstructorId" readonly>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldName">이름 *</label>
+          <input class="form-input" id="fieldName" required placeholder="강사 이름">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="fieldCohort">최초 기수</label>
+          <input class="form-input" id="fieldCohort" placeholder="예: 3기">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fieldStatus">활동 상태</label>
+          <select class="form-select" id="fieldStatus">
+            <option value="active">Active (활동중)</option>
+            <option value="inactive">Inactive (비활동)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fieldRegion">활동 지역</label>
+        <input class="form-input" id="fieldRegion" placeholder="예: [안산 거점] 안산, 시흥, 수원">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fieldTime">활동 시간</label>
+        <input class="form-input" id="fieldTime" placeholder="예: 오전-월,화,목 / 오후-화,수,목,금,토">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fieldSpecialty">전문성</label>
+        <input class="form-input" id="fieldSpecialty" placeholder="예: 아두이노, CAD, Python, ROS">
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="UI.closeModal()">취소</button>
+        <button type="submit" class="btn btn-primary">💾 저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── Detail Modal ─── -->
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-header">
+      <h2>강사 상세 정보</h2>
+      <button class="modal-close" id="detailClose">✕</button>
+    </div>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- ─── Toast Container ─── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DORO Instructor DB Schema Ver 2",
+  "description": "DORO 강사관리 시스템의 4개 핵심 시트 JSON 스키마",
+
+  "definitions": {
+    "InstructorDB": {
+      "type": "object",
+      "required": ["instructor_id", "name", "active_status", "tier"],
+      "properties": {
+        "instructor_id": { "type": "string", "pattern": "^\\d{2}-[A-Z]{4}$", "description": "고유ID (예: 26-RPWR)" },
+        "name": { "type": "string", "description": "이름" },
+        "first_cohort": { "type": "string", "description": "최초 기수 (예: 1기)" },
+        "active_status": { "type": "string", "enum": ["active", "inactive"], "description": "이번 기수 활동 여부" },
+        "total_score": { "type": "number", "default": 0, "description": "총점" },
+        "tier": { "type": "string", "enum": ["General", "Advanced", "Master", "Penalty"], "description": "등급" },
+        "activity_region": { "type": "string", "description": "활동 지역" },
+        "activity_time": { "type": "string", "description": "활동 시간" },
+        "specialty": { "type": "string", "description": "전문성" },
+        "penalty_count": { "type": "integer", "default": 0, "description": "패널티 횟수" },
+        "last_updated": { "type": "string", "format": "date-time", "description": "최근 업데이트" }
+      }
+    },
+
+    "InstructorSensitive": {
+      "type": "object",
+      "required": ["instructor_id", "name"],
+      "properties": {
+        "instructor_id": { "type": "string", "description": "고유ID" },
+        "name": { "type": "string" },
+        "gender": { "type": "string", "enum": ["남", "여"] },
+        "first_cohort": { "type": "integer", "description": "최초 합격 기수" },
+        "university": { "type": "string" },
+        "department": { "type": "string" },
+        "current_residence": { "type": "string" },
+        "registered_address": { "type": "string" },
+        "phone": { "type": "string" },
+        "rrn": { "type": "string", "description": "주민등록번호" },
+        "id_card_file": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "bank_name": { "type": "string" },
+        "bank_account": { "type": "string" },
+        "bankbook_file": { "type": "string" },
+        "profile_photo": { "type": "string" },
+        "available_time": { "type": "string" },
+        "career_history": { "type": "string" }
+      }
+    },
+
+    "ActivityLog": {
+      "type": "object",
+      "required": ["timestamp", "instructor_id", "activity_type", "point", "source"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "instructor_id": { "type": "string" },
+        "activity_type": { "type": "string", "description": "활동 종류" },
+        "activity_value": { "type": "string", "description": "횟수/점수/시간" },
+        "point": { "type": "number", "description": "반영 점수" },
+        "note": { "type": "string" },
+        "source": { "type": "string", "enum": ["form", "discord", "notion", "manager"] }
+      }
+    },
+
+    "AbilityLog": {
+      "type": "object",
+      "required": ["timestamp", "instructor_id", "ability_type", "ability_value", "point"],
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "instructor_id": { "type": "string" },
+        "ability_type": {
+          "type": "string",
+          "enum": ["major_track", "project_track", "teaching_track", "skill_track", "credential_track", "leadership_track"]
+        },
+        "ability_value": { "type": "string" },
+        "point": { "type": "number" },
+        "note": { "type": "string" },
+        "source": { "type": "string", "enum": ["form"] }
+      }
+    }
+  }
+}

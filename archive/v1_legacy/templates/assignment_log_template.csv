@@ -1,0 +1,3 @@
+assignment_run_id,run_at,session_id,course_id,instructor_id,hard_pass,hard_fail_reasons,soft_score,rank_order,auto_selected,manager_override,override_reason,final_status
+20260308-001,2026-03-08T10:30:00+09:00,S-4032,C-2201,101,true,,84.26,1,true,false,,assigned
+20260308-001,2026-03-08T10:30:00+09:00,S-4032,C-2201,205,true,,81.11,2,false,true,기관 요청으로 기존 담당 유지,not_assigned

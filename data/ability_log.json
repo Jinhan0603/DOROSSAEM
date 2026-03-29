@@ -1,0 +1,22 @@
+{
+  "logs": [
+    {
+      "timestamp": "2026-03-08T15:17:30+09:00",
+      "instructor_id": "26-RPWR",
+      "ability_type": "major_track",
+      "ability_value": "engineering_major",
+      "point": 2,
+      "note": "로봇공학과",
+      "source": "form"
+    },
+    {
+      "timestamp": "2026-03-08T18:17:30+09:00",
+      "instructor_id": "26-RPWR",
+      "ability_type": "project_track",
+      "ability_value": "related_project_lead",
+      "point": 3,
+      "note": "파이썬 객체인식 AI 졸업작품 팀장",
+      "source": "form"
+    }
+  ]
+}

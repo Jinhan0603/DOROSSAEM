@@ -1,0 +1,17 @@
+{
+  "instructors": [
+    {
+      "instructor_id": "26-RPWR",
+      "name": "김도로",
+      "first_cohort": "3기",
+      "active_status": "active",
+      "total_score": 76,
+      "tier": "Advanced",
+      "activity_region": "[안산 거점] 안산, 시흥, 수원 (4호선/수인분당선)",
+      "activity_time": "오전 - 월, 화, 목 / 오후 - 화, 수, 목, 금, 토",
+      "specialty": "아두이노, CAD, Python, ROS",
+      "penalty_count": 0,
+      "last_updated": "2026-03-08T20:17:30+09:00"
+    }
+  ]
+}

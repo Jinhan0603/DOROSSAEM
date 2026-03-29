@@ -1,0 +1,35 @@
+# ===================================
+# DORO 강사관리 시스템 .gitignore
+# ===================================
+
+# ─── 민감정보 파일 ───
+# 개인정보가 포함된 원본 엑셀 파일
+data/source/
+data/normalized/
+
+# 민감정보 CSV (주민번호, 계좌 등)
+*_sensitive_*.csv
+*_sensitive_*.json
+
+# ─── OS 파일 ───
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ─── Temp ───
+*.tmp
+*.bak
+~$*
+
+# ─── Node (향후) ───
+node_modules/
+package-lock.json
+
+# ─── clasp (구버전) ───
+.clasp.json

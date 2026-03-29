@@ -1,0 +1,2 @@
+snapshot_date,instructor_id,instructor_name,window_days,n_observations,reliability_score,qualification_score,field_feedback_score,process_compliance_score,mastery_score,contribution_score,evidence_score,active_penalty_points,confidence_factor,assignment_score,promotion_score,grade
+2026-03-08,101,Kim Minji,90,14,93.35,80.00,87.10,93.00,0.00,66.00,0.00,2,1.00,88.01,82.27,A

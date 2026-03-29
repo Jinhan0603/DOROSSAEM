@@ -1,0 +1,22 @@
+{
+  "logs": [
+    {
+      "timestamp": "2026-03-08T15:17:30+09:00",
+      "instructor_id": "26-RPWR",
+      "activity_type": "OT 참여",
+      "activity_value": "1회",
+      "point": 1,
+      "note": "인재육성재단 OT",
+      "source": "form"
+    },
+    {
+      "timestamp": "2026-03-08T18:17:30+09:00",
+      "instructor_id": "26-RPWR",
+      "activity_type": "교육 영상 제작",
+      "activity_value": "3편",
+      "point": 9,
+      "note": "X-arm 영상 3편",
+      "source": "discord"
+    }
+  ]
+}
