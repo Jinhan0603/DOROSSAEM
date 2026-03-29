@@ -577,9 +577,417 @@ const UI = {
   }
 };
 
+// ===== Upload Module =====
+const Upload = {
+  parsedData: [],      // Raw parsed rows from file
+  fileHeaders: [],     // Column headers from file
+  columnMapping: {},   // Maps DB field -> file column header
+  fileName: '',
+
+  // DB fields that can be mapped from uploaded file
+  FIELDS: [
+    { key: 'name', label: '이름', required: true },
+    { key: 'first_cohort', label: '최초 기수', required: false },
+    { key: 'active_status', label: '활동 상태', required: false },
+    { key: 'activity_region', label: '활동 지역', required: false },
+    { key: 'activity_time', label: '활동 시간', required: false },
+    { key: 'specialty', label: '전문성', required: false },
+    { key: 'gender', label: '성별', required: false },
+    { key: 'university', label: '대학교', required: false },
+    { key: 'department', label: '학과', required: false },
+    { key: 'phone', label: '전화번호', required: false },
+    { key: 'email', label: '이메일', required: false },
+    { key: 'current_residence', label: '현 거주지', required: false },
+  ],
+
+  // Auto-matching rules: file header keywords -> DB field key
+  HEADER_ALIASES: {
+    'name': ['이름', '성명', '강사명', 'name', '강사 이름'],
+    'first_cohort': ['기수', '최초 기수', 'cohort', '합격 기수', '합격기수', '몇 기'],
+    'active_status': ['활동', '활동 상태', '활동 여부', 'status', '상태'],
+    'activity_region': ['지역', '활동 지역', '거점', 'region', '활동가능지역', '활동 가능 지역'],
+    'activity_time': ['시간', '활동 시간', '가능 시간', 'time', '활동가능시간', '활동 가능 시간'],
+    'specialty': ['전문', '전문성', '전문 분야', 'specialty', '전문분야', '스킬', '역량'],
+    'gender': ['성별', 'gender'],
+    'university': ['대학', '대학교', '학교', 'university'],
+    'department': ['학과', '전공', 'department', '학부'],
+    'phone': ['전화', '연락처', '핸드폰', '전화번호', 'phone', '휴대폰'],
+    'email': ['이메일', '메일', 'email', 'e-mail'],
+    'current_residence': ['거주지', '거주', '현 거주지', '주소', '현거주지'],
+  },
+
+  init() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+
+    // Upload button
+    document.getElementById('btnUpload').addEventListener('click', () => this.openModal());
+
+    // Close modal
+    document.getElementById('uploadOverlay').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) this.closeModal();
+    });
+    document.getElementById('uploadClose').addEventListener('click', () => this.closeModal());
+
+    // Dropzone click
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    // Drag events
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (file) this.handleFile(file);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) this.handleFile(file);
+      e.target.value = ''; // Reset for re-upload
+    });
+
+    // Back button
+    document.getElementById('btnUploadBack').addEventListener('click', () => this.showStep(1));
+
+    // Import button
+    document.getElementById('btnImport').addEventListener('click', () => this.doImport());
+
+    // Done button
+    document.getElementById('btnUploadDone').addEventListener('click', () => this.closeModal());
+
+    // Keyboard
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('uploadOverlay').classList.contains('active')) {
+        this.closeModal();
+      }
+    });
+  },
+
+  openModal() {
+    this.showStep(1);
+    document.getElementById('uploadOverlay').classList.add('active');
+  },
+
+  closeModal() {
+    document.getElementById('uploadOverlay').classList.remove('active');
+    this.parsedData = [];
+    this.fileHeaders = [];
+    this.columnMapping = {};
+  },
+
+  showStep(step) {
+    document.getElementById('uploadStep1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('uploadStep2').style.display = step === 2 ? 'block' : 'none';
+    document.getElementById('uploadStep3').style.display = step === 3 ? 'block' : 'none';
+  },
+
+  async handleFile(file) {
+    const validExts = ['.xlsx', '.xls', '.csv'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!validExts.includes(ext)) {
+      UI.showToast('지원하지 않는 파일 형식입니다. (.xlsx, .xls, .csv)', 'error');
+      return;
+    }
+
+    this.fileName = file.name;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      // Use first sheet
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (jsonData.length === 0) {
+        UI.showToast('파일에 데이터가 없습니다.', 'error');
+        return;
+      }
+
+      this.fileHeaders = Object.keys(jsonData[0]);
+      this.parsedData = jsonData;
+
+      // Auto-detect column mapping
+      this.autoDetectMapping();
+
+      // Show step 2
+      this.showStep(2);
+      this.renderFileInfo(file, jsonData.length, sheetName);
+      this.renderMappingUI();
+      this.renderPreview();
+
+    } catch (err) {
+      console.error('File parse error:', err);
+      UI.showToast('파일 읽기 실패: ' + err.message, 'error');
+    }
+  },
+
+  autoDetectMapping() {
+    this.columnMapping = {};
+
+    for (const field of this.FIELDS) {
+      const aliases = this.HEADER_ALIASES[field.key] || [];
+      let bestMatch = null;
+
+      for (const header of this.fileHeaders) {
+        const h = header.trim().toLowerCase().replace(/\s+/g, ' ');
+
+        // Exact match
+        if (aliases.some(a => a.toLowerCase() === h)) {
+          bestMatch = header;
+          break;
+        }
+
+        // Contains match
+        if (!bestMatch && aliases.some(a => h.includes(a.toLowerCase()) || a.toLowerCase().includes(h))) {
+          bestMatch = header;
+        }
+      }
+
+      if (bestMatch) {
+        this.columnMapping[field.key] = bestMatch;
+      }
+    }
+  },
+
+  renderFileInfo(file, rowCount, sheetName) {
+    const sizeStr = file.size > 1024 * 1024
+      ? (file.size / 1024 / 1024).toFixed(1) + ' MB'
+      : Math.round(file.size / 1024) + ' KB';
+
+    document.getElementById('uploadFileInfo').innerHTML = `
+      <span class="file-icon">📄</span>
+      <div>
+        <div class="file-name">${file.name}</div>
+        <div class="file-meta">${sizeStr} · 시트: ${sheetName} · ${rowCount}행 · ${this.fileHeaders.length}열</div>
+      </div>
+    `;
+  },
+
+  renderMappingUI() {
+    const grid = document.getElementById('mappingGrid');
+    grid.innerHTML = this.FIELDS.map(field => {
+      const options = this.fileHeaders.map(h => {
+        const selected = this.columnMapping[field.key] === h ? 'selected' : '';
+        return `<option value="${this.escapeHtml(h)}" ${selected}>${this.escapeHtml(h)}</option>`;
+      }).join('');
+
+      const requiredMark = field.required ? ' <span style="color:var(--tier-penalty)">*</span>' : '';
+
+      return `
+        <div class="mapping-item">
+          <span class="mapping-label">${field.label}${requiredMark}</span>
+          <span class="mapping-arrow">←</span>
+          <select data-field="${field.key}" onchange="Upload.updateMapping('${field.key}', this.value)">
+            <option value="">— 선택 안함 —</option>
+            ${options}
+          </select>
+        </div>
+      `;
+    }).join('');
+  },
+
+  updateMapping(fieldKey, headerValue) {
+    if (headerValue) {
+      this.columnMapping[fieldKey] = headerValue;
+    } else {
+      delete this.columnMapping[fieldKey];
+    }
+    this.renderPreview();
+  },
+
+  renderPreview() {
+    const nameCol = this.columnMapping['name'];
+    if (!nameCol) {
+      document.getElementById('previewCount').textContent = '(이름 열을 매핑해주세요)';
+      document.getElementById('previewHead').innerHTML = '';
+      document.getElementById('previewBody').innerHTML = `
+        <tr><td colspan="5">
+          <div class="empty-state">
+            <div class="empty-state-icon">📌</div>
+            <div class="empty-state-text">"이름" 필드를 매핑하면 미리보기가 표시됩니다</div>
+          </div>
+        </td></tr>`;
+      return;
+    }
+
+    // Build mapped preview data
+    const mapped = this.parsedData.map(row => {
+      const result = {};
+      for (const field of this.FIELDS) {
+        const col = this.columnMapping[field.key];
+        result[field.key] = col ? String(row[col] || '').trim() : '';
+      }
+      return result;
+    }).filter(r => r.name); // Filter out rows with empty name
+
+    // Check for existing
+    const existingNames = new Set(Store.instructors.map(i => i.name));
+
+    document.getElementById('previewCount').textContent = `(${mapped.length}명)`;
+
+    // Table head - only show mapped fields
+    const mappedFields = this.FIELDS.filter(f => this.columnMapping[f.key]);
+    document.getElementById('previewHead').innerHTML = `<tr>
+      <th>#</th>
+      <th>상태</th>
+      ${mappedFields.map(f => `<th>${f.label}</th>`).join('')}
+    </tr>`;
+
+    // Table body (show up to 50 rows)
+    const displayRows = mapped.slice(0, 50);
+    document.getElementById('previewBody').innerHTML = displayRows.map((row, i) => {
+      const exists = existingNames.has(row.name);
+      const cls = exists ? 'row-existing' : '';
+      const badge = exists
+        ? '<span class="row-badge exists">기존</span>'
+        : '<span class="row-badge new">신규</span>';
+
+      return `<tr class="${cls}">
+        <td>${i + 1}</td>
+        <td>${badge}</td>
+        ${mappedFields.map(f => `<td title="${this.escapeHtml(row[f.key])}">${this.escapeHtml(row[f.key]) || '-'}</td>`).join('')}
+      </tr>`;
+    }).join('');
+
+    if (mapped.length > 50) {
+      document.getElementById('previewBody').innerHTML += `
+        <tr><td colspan="${mappedFields.length + 2}" style="text-align:center;color:var(--text-muted);padding:var(--space-md)">
+          ... 외 ${mapped.length - 50}명 더
+        </td></tr>`;
+    }
+  },
+
+  doImport() {
+    const nameCol = this.columnMapping['name'];
+    if (!nameCol) {
+      UI.showToast('이름 열이 매핑되지 않았습니다.', 'error');
+      return;
+    }
+
+    const overwrite = document.getElementById('chkOverwrite').checked;
+    const existingNames = new Map(Store.instructors.map(i => [i.name, i]));
+
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const row of this.parsedData) {
+      const name = String(row[nameCol] || '').trim();
+      if (!name) continue;
+
+      const data = {};
+      for (const field of this.FIELDS) {
+        const col = this.columnMapping[field.key];
+        if (col) {
+          data[field.key] = String(row[col] || '').trim();
+        }
+      }
+
+      // Normalize active_status
+      if (data.active_status) {
+        const val = data.active_status.toLowerCase();
+        if (val.includes('active') || val.includes('활동') || val === 'o' || val === 'yes' || val === '예') {
+          data.active_status = 'active';
+        } else if (val.includes('inactive') || val.includes('비활') || val === 'x' || val === 'no' || val === '아니오') {
+          data.active_status = 'inactive';
+        } else {
+          data.active_status = 'active'; // Default
+        }
+      } else {
+        data.active_status = 'active';
+      }
+
+      // Normalize first_cohort (add "기" suffix if just a number)
+      if (data.first_cohort) {
+        const num = data.first_cohort.replace(/[^0-9]/g, '');
+        if (num && !data.first_cohort.includes('기')) {
+          data.first_cohort = num + '기';
+        }
+      }
+
+      // Check if exists
+      const existing = existingNames.get(name);
+
+      if (existing) {
+        if (overwrite) {
+          // Update existing instructor (keep ID, score, tier, penalty)
+          const updateData = { ...data };
+          delete updateData.instructor_id;
+          Store.updateInstructor(existing.instructor_id, updateData);
+          updated++;
+        } else {
+          skipped++;
+        }
+      } else {
+        // Add new instructor
+        const newInstructor = {
+          instructor_id: Store.generateId(),
+          name: data.name,
+          first_cohort: data.first_cohort || '',
+          active_status: data.active_status || 'active',
+          activity_region: data.activity_region || '',
+          activity_time: data.activity_time || '',
+          specialty: data.specialty || '',
+          total_score: 0,
+          tier: 'General',
+          penalty_count: 0,
+          last_updated: new Date().toISOString(),
+        };
+        Store.addInstructor(newInstructor);
+        existingNames.set(name, newInstructor); // Prevent same-file duplicates
+        added++;
+      }
+    }
+
+    // Recalculate and re-render
+    Store.recalculateAll();
+    UI.renderStats();
+    UI.renderTable();
+
+    // Show result
+    this.showStep(3);
+    document.getElementById('uploadResult').innerHTML = `
+      <div class="result-icon">🎉</div>
+      <div class="result-title">일괄 등록 완료!</div>
+      <div class="result-stats">
+        <div class="result-stat">
+          <div class="result-stat-value" style="color:var(--status-active)">${added}</div>
+          <div class="result-stat-label">신규 등록</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-value" style="color:var(--color-primary)">${updated}</div>
+          <div class="result-stat-label">업데이트</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-value" style="color:var(--text-muted)">${skipped}</div>
+          <div class="result-stat-label">건너뛰기</div>
+        </div>
+      </div>
+    `;
+
+    UI.showToast(`${added}명 등록, ${updated}명 업데이트 완료`, 'success');
+  },
+
+  escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+};
+
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
   await Store.loadAll();
   UI.init();
+  Upload.init();
 });

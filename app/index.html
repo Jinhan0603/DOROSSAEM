@@ -20,6 +20,7 @@
     </div>
     <div class="header-actions">
       <button class="btn btn-secondary" id="btnExport">📥 내보내기</button>
+      <button class="btn btn-upload" id="btnUpload">📤 일괄 등록</button>
       <button class="btn btn-primary" id="btnAddInstructor">➕ 강사 등록</button>
     </div>
   </header>
@@ -155,9 +156,74 @@
   </div>
 </div>
 
+<!-- ─── Upload Modal ─── -->
+<div class="modal-overlay" id="uploadOverlay">
+  <div class="modal" style="max-width:900px">
+    <div class="modal-header">
+      <h2 id="uploadTitle">📤 강사 일괄 등록</h2>
+      <button class="modal-close" id="uploadClose">✕</button>
+    </div>
+    <div id="uploadContent">
+      <!-- Step 1: File Upload -->
+      <div id="uploadStep1">
+        <div class="upload-description">
+          <p>구글 폼 응답이 저장된 <strong>엑셀 파일(.xlsx)</strong> 또는 <strong>CSV 파일(.csv)</strong>을 업로드하세요.</p>
+          <p class="upload-hint">📋 구글 시트 → 파일 → 다운로드 → .xlsx 또는 .csv</p>
+        </div>
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">📁</div>
+          <div class="dropzone-text">파일을 여기에 드래그하거나 클릭하세요</div>
+          <div class="dropzone-subtext">.xlsx, .xls, .csv 지원</div>
+          <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+        </div>
+      </div>
+
+      <!-- Step 2: Column Mapping -->
+      <div id="uploadStep2" style="display:none">
+        <div class="upload-file-info" id="uploadFileInfo"></div>
+        
+        <div class="mapping-section">
+          <h3 class="mapping-title">📌 컬럼 매핑</h3>
+          <p class="mapping-desc">엑셀 열 → 강사 DB 필드를 연결해주세요. 자동 추천된 매핑을 확인하세요.</p>
+          <div class="mapping-grid" id="mappingGrid"></div>
+        </div>
+
+        <div class="preview-section">
+          <h3 class="mapping-title">👀 미리보기 <span id="previewCount" class="preview-count"></span></h3>
+          <div class="preview-table-wrap">
+            <table class="data-table preview-table" id="previewTable">
+              <thead id="previewHead"></thead>
+              <tbody id="previewBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="upload-actions">
+          <button class="btn btn-secondary" id="btnUploadBack">← 다시 선택</button>
+          <div style="display:flex;gap:var(--space-sm);align-items:center">
+            <label class="upload-option">
+              <input type="checkbox" id="chkOverwrite"> 기존 동일 이름 강사 덮어쓰기
+            </label>
+            <button class="btn btn-primary btn-lg" id="btnImport">📥 가져오기</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Result -->
+      <div id="uploadStep3" style="display:none">
+        <div class="upload-result" id="uploadResult"></div>
+        <div class="upload-actions" style="justify-content:center">
+          <button class="btn btn-primary" id="btnUploadDone">확인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ─── Toast Container ─── -->
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

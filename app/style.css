@@ -798,6 +798,305 @@ body::before {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* ─── Upload Button ─── */
+.btn-upload {
+  background: linear-gradient(135deg, #6C5CE7, #A29BFE);
+  border-color: #6C5CE7;
+  color: white;
+}
+
+.btn-upload:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(108, 92, 231, 0.3);
+}
+
+.btn-lg {
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* ─── Upload Description ─── */
+.upload-description {
+  margin-bottom: var(--space-lg);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.upload-description strong {
+  color: var(--color-primary);
+}
+
+.upload-hint {
+  margin-top: var(--space-sm);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+/* ─── Dropzone ─── */
+.dropzone {
+  border: 2px dashed var(--border-hover);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  background: var(--bg-card);
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-glow);
+  transform: scale(1.01);
+}
+
+.dropzone-icon {
+  font-size: 3rem;
+  margin-bottom: var(--space-md);
+  transition: transform var(--transition-normal);
+}
+
+.dropzone:hover .dropzone-icon,
+.dropzone.dragover .dropzone-icon {
+  transform: scale(1.15) translateY(-4px);
+}
+
+.dropzone-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.dropzone-subtext {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ─── Upload File Info ─── */
+.upload-file-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  font-size: 0.85rem;
+}
+
+.upload-file-info .file-icon {
+  font-size: 1.5rem;
+}
+
+.upload-file-info .file-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.upload-file-info .file-meta {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* ─── Mapping Section ─── */
+.mapping-section {
+  margin-bottom: var(--space-lg);
+}
+
+.mapping-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+  color: var(--text-primary);
+}
+
+.mapping-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
+}
+
+.mapping-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-sm);
+}
+
+.mapping-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.mapping-item:hover {
+  border-color: var(--border-hover);
+}
+
+.mapping-item .mapping-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 70px;
+  white-space: nowrap;
+}
+
+.mapping-item .mapping-arrow {
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  opacity: 0.6;
+}
+
+.mapping-item select {
+  flex: 1;
+  padding: 4px 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+}
+
+.mapping-item select:focus {
+  border-color: var(--border-focus);
+}
+
+/* ─── Preview Section ─── */
+.preview-section {
+  margin-bottom: var(--space-lg);
+}
+
+.preview-count {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: var(--space-xs);
+}
+
+.preview-table-wrap {
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.preview-table {
+  font-size: 0.8rem !important;
+}
+
+.preview-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-elevated) !important;
+}
+
+.preview-table td {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-table tr.row-existing {
+  opacity: 0.5;
+}
+
+.preview-table .row-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+.row-badge.new {
+  background: rgba(0, 214, 143, 0.15);
+  color: var(--status-active);
+}
+
+.row-badge.exists {
+  background: rgba(255, 143, 94, 0.15);
+  color: var(--color-primary-light);
+}
+
+/* ─── Upload Actions ─── */
+.upload-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-color);
+}
+
+.upload-option {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+}
+
+.upload-option input[type="checkbox"] {
+  accent-color: var(--color-primary);
+}
+
+/* ─── Upload Result ─── */
+.upload-result {
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.upload-result .result-icon {
+  font-size: 3.5rem;
+  margin-bottom: var(--space-md);
+}
+
+.upload-result .result-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+
+.upload-result .result-stats {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-lg);
+  margin-top: var(--space-md);
+}
+
+.upload-result .result-stat {
+  text-align: center;
+}
+
+.upload-result .result-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.upload-result .result-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .app-container { padding: var(--space-md); }
