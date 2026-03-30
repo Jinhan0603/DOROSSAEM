@@ -981,21 +981,26 @@ const Upload = {
   fileName: '',
 
   // DB fields that can be mapped from uploaded file
+  // hidden: true = auto-calculated, don't show in mapping UI
   FIELDS: [
     { key: 'name', label: '이름', required: true },
     { key: 'first_cohort', label: '최초 기수', required: false },
-    { key: 'active_status', label: '활동 상태', required: false },
-    { key: 'activity_region', label: '활동 지역', required: false },
-    { key: 'activity_time', label: '활동 시간', required: false },
-    { key: 'specialty', label: '전문성', required: false },
     { key: 'gender', label: '성별', required: false },
     { key: 'university', label: '대학교', required: false },
     { key: 'department', label: '학과', required: false },
     { key: 'phone', label: '전화번호', required: false },
     { key: 'email', label: '이메일', required: false },
     { key: 'current_residence', label: '현 거주지', required: false },
-    { key: 'career_history', label: '강의/개발 경력', required: false },
+    { key: 'activity_time', label: '활동 시간', required: false },
+    // Auto-calculated fields (hidden from mapping UI)
+    { key: 'activity_region', label: '활동 지역', hidden: true },
+    { key: 'specialty', label: '전문성', hidden: true },
+    { key: 'career_history', label: '강의/개발 경력', hidden: true },
+    { key: 'active_status', label: '활동 상태', hidden: true },
   ],
+
+  // Default status for all imported instructors
+  defaultStatus: 'active',
 
   // Auto-matching rules: file header keywords -> DB field key
   HEADER_ALIASES: {
@@ -1003,7 +1008,7 @@ const Upload = {
     'first_cohort': ['기수', '최초 기수', 'cohort', '합격 기수', '합격기수', '몇 기', '전형', '현 기수'],
     'active_status': ['활동', '활동 상태', '활동 여부', 'status', '상태'],
     'activity_region': ['지역', '활동 지역', '거점', 'region', '활동가능지역', '활동 가능 지역'],
-    'activity_time': ['시간', '활동 시간', '가능 시간', 'time', '활동가능시간', '활동 가능 시간'],
+    'activity_time': ['활동 시간', '가능 시간', 'time', '활동가능시간', '활동 가능 시간'],
     'specialty': ['전문', '전문성', '전문 분야', 'specialty', '전문분야', '스킬', '역량'],
     'gender': ['성별', 'gender'],
     'university': ['대학', '대학교', '학교', 'university'],
@@ -1173,7 +1178,9 @@ const Upload = {
 
   renderMappingUI() {
     const grid = document.getElementById('mappingGrid');
-    grid.innerHTML = this.FIELDS.map(field => {
+    const visibleFields = this.FIELDS.filter(f => !f.hidden);
+
+    grid.innerHTML = visibleFields.map(field => {
       const options = this.fileHeaders.map(h => {
         const selected = this.columnMapping[field.key] === h ? 'selected' : '';
         return `<option value="${this.escapeHtml(h)}" ${selected}>${this.escapeHtml(h)}</option>`;
@@ -1192,6 +1199,28 @@ const Upload = {
         </div>
       `;
     }).join('');
+
+    // Add status selector and auto-calc info
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="mapping-item" style="border:1px solid var(--color-primary);border-radius:var(--radius-md);padding:8px 12px">
+        <span class="mapping-label">활동 상태</span>
+        <span class="mapping-arrow">→</span>
+        <select onchange="Upload.defaultStatus = this.value">
+          <option value="active" ${this.defaultStatus === 'active' ? 'selected' : ''}>🟢 활동중 (active)</option>
+          <option value="inactive" ${this.defaultStatus === 'inactive' ? 'selected' : ''}>⚪ 비활동 (inactive)</option>
+        </select>
+      </div>
+    `);
+
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="mapping-auto-info">
+        <div class="auto-info-title">🤖 자동 계산 필드</div>
+        <div class="auto-info-items">
+          <span>📍 활동 지역 (학교+거주지)</span>
+          <span>🎯 전문성 (학과+경력)</span>
+        </div>
+      </div>
+    `);
   },
 
   updateMapping(fieldKey, headerValue) {
@@ -1305,19 +1334,8 @@ const Upload = {
         }
       }
 
-      // Normalize active_status
-      if (data.active_status) {
-        const val = data.active_status.toLowerCase();
-        if (val.includes('active') || val.includes('활동') || val === 'o' || val === 'yes' || val === '예') {
-          data.active_status = 'active';
-        } else if (val.includes('inactive') || val.includes('비활') || val === 'x' || val === 'no' || val === '아니오') {
-          data.active_status = 'inactive';
-        } else {
-          data.active_status = 'active'; // Default
-        }
-      } else {
-        data.active_status = 'active';
-      }
+      // Set active_status from user selection
+      data.active_status = this.defaultStatus || 'active';
 
       // Normalize first_cohort (add "기" suffix if just a number)
       if (data.first_cohort) {
