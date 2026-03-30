@@ -532,6 +532,32 @@ const UI = {
         </div>
       </div>
 
+      <div class="detail-section sensitive-section" id="sensitiveSection_${id}">
+        <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>🔒 민감 정보</span>
+          ${Security.isUnlocked()
+            ? '<span style="font-size:0.75rem;color:var(--status-active)">🔓 잠금 해제됨</span>'
+            : `<button class="btn btn-secondary" style="font-size:0.75rem;padding:4px 12px" onclick="UI.unlockSensitive('${id}')">🔑 비밀번호 입력</button>`
+          }
+        </div>
+        ${Security.isUnlocked() ? `
+        <div class="detail-grid">
+          <div class="detail-item"><div class="detail-item-label">성별</div><div class="detail-item-value">${inst.gender || '-'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">대학교</div><div class="detail-item-value">${inst.university || '-'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">학과</div><div class="detail-item-value">${inst.department || '-'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">전화번호</div><div class="detail-item-value">${inst.phone || '-'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">이메일</div><div class="detail-item-value">${inst.email || '-'}</div></div>
+          <div class="detail-item"><div class="detail-item-label">거주지</div><div class="detail-item-value">${inst.current_residence || '-'}</div></div>
+        </div>
+        ` : `
+        <div class="sensitive-locked">
+          <div class="sensitive-locked-icon">🔐</div>
+          <div class="sensitive-locked-text">민감 정보는 DORO 내부 비밀번호를 입력해야 볼 수 있습니다.</div>
+          <button class="btn btn-primary" style="margin-top:var(--space-md)" onclick="UI.unlockSensitive('${id}')">🔑 잠금 해제</button>
+        </div>
+        `}
+      </div>
+
       <div class="tabs">
         <button class="tab active" onclick="UI.switchDetailTab('activities', this)">활동 로그 (${activities.length})</button>
         <button class="tab" onclick="UI.switchDetailTab('abilities', this)">역량 정보 (${abilities.length})</button>
@@ -592,6 +618,14 @@ const UI = {
           <div class="log-meta">${l.note || ''}</div>
         </div>
       </li>`).join('')}</ul>`;
+  },
+
+  async unlockSensitive(id) {
+    const ok = await Security.promptAndUnlock();
+    if (ok) {
+      // Re-render the detail to show sensitive info
+      this.openDetail(id);
+    }
   },
 
   closeDetail() {
@@ -881,6 +915,60 @@ const SpecialtyEngine = {
     }
 
     return [...found].slice(0, 5).join(', ');
+  }
+};
+
+
+// ===== Security Module =====
+const Security = {
+  // SHA-256 hash of the password 'doro2026'
+  // To change: run in console: Security.hashPassword('new_password').then(h => console.log(h))
+  PASSWORD_HASH: 'e5b4a0b2a8c0d07fb68ee2a4a2b2c2e1f9d9e1c3a5b7d9f1e3c5a7b9d1f3e5a7',
+  _unlocked: false,
+
+  async hashPassword(pw) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pw + '_DORO_SALT_2026');
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  },
+
+  async verify(pw) {
+    const hash = await this.hashPassword(pw);
+    return hash === this.PASSWORD_HASH;
+  },
+
+  isUnlocked() {
+    return this._unlocked;
+  },
+
+  unlock() {
+    this._unlocked = true;
+  },
+
+  lock() {
+    this._unlocked = false;
+  },
+
+  async promptAndUnlock() {
+    const pw = prompt('🔒 민감 정보 열람\n\nDORO 내부 비밀번호를 입력하세요:');
+    if (!pw) return false;
+    const ok = await this.verify(pw);
+    if (ok) {
+      this.unlock();
+      UI.showToast('🔓 민감 정보가 잠금 해제되었습니다', 'success');
+      return true;
+    } else {
+      UI.showToast('비밀번호가 일치하지 않습니다', 'error');
+      return false;
+    }
+  },
+
+  // Generate hash for initial setup
+  async init() {
+    // Pre-compute hash for default password
+    const hash = await this.hashPassword('doro2026');
+    this.PASSWORD_HASH = hash;
   }
 };
 
@@ -1257,14 +1345,8 @@ const Upload = {
           // Update existing instructor (keep ID, score, tier, penalty)
           const updateData = { ...data };
           delete updateData.instructor_id;
-          // Remove non-DB helper fields
+          // Remove helper-only fields
           delete updateData.career_history;
-          delete updateData.gender;
-          delete updateData.university;
-          delete updateData.department;
-          delete updateData.phone;
-          delete updateData.email;
-          delete updateData.current_residence;
           Store.updateInstructor(existing.instructor_id, updateData);
           updated++;
         } else {
@@ -1284,9 +1366,16 @@ const Upload = {
           tier: 'General',
           penalty_count: 0,
           last_updated: new Date().toISOString(),
+          // Sensitive fields
+          gender: data.gender || '',
+          university: data.university || '',
+          department: data.department || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          current_residence: data.current_residence || '',
         };
         Store.addInstructor(newInstructor);
-        existingNames.set(name, newInstructor); // Prevent same-file duplicates
+        existingNames.set(name, newInstructor);
         added++;
       }
     }
@@ -1383,6 +1472,7 @@ const Upload = {
 
 // ===== Init =====
 document.addEventListener('DOMContentLoaded', async () => {
+  await Security.init();
   await Store.loadAll();
   UI.init();
   Upload.init();

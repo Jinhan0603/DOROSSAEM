@@ -1204,6 +1204,45 @@ body::before {
   color: #4ECDC4;
 }
 
+/* ─── Sensitive Info Section ─── */
+.sensitive-section {
+  border: 1px solid rgba(255, 167, 38, 0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-md);
+  background: rgba(255, 167, 38, 0.03);
+}
+
+.sensitive-section .detail-grid {
+  animation: fadeIn 0.3s ease;
+}
+
+.sensitive-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+}
+
+.sensitive-locked-icon {
+  font-size: 2.5rem;
+  margin-bottom: var(--space-sm);
+  opacity: 0.6;
+}
+
+.sensitive-locked-text {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  max-width: 300px;
+  line-height: 1.6;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .app-container { padding: var(--space-md); }
