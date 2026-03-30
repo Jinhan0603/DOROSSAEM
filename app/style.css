@@ -798,6 +798,20 @@ body::before {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* ─── Ghost Button ─── */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
 /* ─── Upload Button ─── */
 .btn-upload {
   background: linear-gradient(135deg, #6C5CE7, #A29BFE);

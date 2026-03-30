@@ -8,8 +8,26 @@ const Store = {
   instructors: [],
   activityLogs: [],
   abilityLogs: [],
+  STORAGE_KEY: 'DORO_DATA_V2',
 
   async loadAll() {
+    // 1) Try localStorage first (persisted data)
+    const saved = localStorage.getItem(this.STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        this.instructors = parsed.instructors || [];
+        this.activityLogs = parsed.activityLogs || [];
+        this.abilityLogs = parsed.abilityLogs || [];
+        this.recalculateAll();
+        console.log(`[Store] localStorage 데이터 로드 (강사 ${this.instructors.length}명)`);
+        return true;
+      } catch (e) {
+        console.warn('[Store] localStorage 파싱 실패, JSON 파일에서 로드');
+      }
+    }
+
+    // 2) Fallback: fetch from JSON files
     try {
       const [instrRes, actRes, abiRes] = await Promise.all([
         fetch('../data/instructor_db.json'),
@@ -25,6 +43,7 @@ const Store = {
       this.abilityLogs = abiData.logs || [];
 
       this.recalculateAll();
+      this.save(); // Save initial data to localStorage
       return true;
     } catch (err) {
       console.error('Data load error:', err);
@@ -33,8 +52,29 @@ const Store = {
       this.activityLogs = SAMPLE_DATA.activityLogs;
       this.abilityLogs = SAMPLE_DATA.abilityLogs;
       this.recalculateAll();
+      this.save();
       return false;
     }
+  },
+
+  // Persist all data to localStorage
+  save() {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+        instructors: this.instructors,
+        activityLogs: this.activityLogs,
+        abilityLogs: this.abilityLogs,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.error('[Store] localStorage 저장 실패:', e);
+    }
+  },
+
+  // Clear localStorage and reload from JSON files
+  async resetData() {
+    localStorage.removeItem(this.STORAGE_KEY);
+    await this.loadAll();
   },
 
   recalculateAll() {
@@ -89,6 +129,7 @@ const Store = {
   addInstructor(data) {
     this.instructors.push(data);
     this.recalculateAll();
+    this.save();
   },
 
   updateInstructor(id, data) {
@@ -96,6 +137,7 @@ const Store = {
     if (idx !== -1) {
       this.instructors[idx] = { ...this.instructors[idx], ...data };
       this.recalculateAll();
+      this.save();
     }
   },
 
@@ -103,16 +145,19 @@ const Store = {
     this.instructors = this.instructors.filter(i => i.instructor_id !== id);
     this.activityLogs = this.activityLogs.filter(l => l.instructor_id !== id);
     this.abilityLogs = this.abilityLogs.filter(l => l.instructor_id !== id);
+    this.save();
   },
 
   addActivityLog(log) {
     this.activityLogs.push(log);
     this.recalculateAll();
+    this.save();
   },
 
   addAbilityLog(log) {
     this.abilityLogs.push(log);
     this.recalculateAll();
+    this.save();
   },
 
   getStats() {
@@ -239,6 +284,16 @@ const UI = {
 
     // Export button
     document.getElementById('btnExport').addEventListener('click', () => this.exportData());
+
+    // Reset button
+    document.getElementById('btnReset').addEventListener('click', async () => {
+      if (confirm('저장된 데이터를 모두 초기화하고 원래 상태로 돌아갑니다.\n계속하시겠습니까?')) {
+        await Store.resetData();
+        this.renderStats();
+        this.renderTable();
+        this.showToast('데이터가 초기화되었습니다', 'success');
+      }
+    });
 
     // Modal close
     document.getElementById('modalOverlay').addEventListener('click', (e) => {
