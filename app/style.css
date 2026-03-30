@@ -1111,6 +1111,99 @@ body::before {
   color: var(--text-muted);
 }
 
+/* ─── Missing Data Alert ─── */
+.missing-data-alert {
+  margin-top: var(--space-lg);
+  background: rgba(255, 167, 38, 0.08);
+  border: 1px solid rgba(255, 167, 38, 0.3);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  text-align: left;
+}
+
+.missing-alert-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.missing-alert-icon { font-size: 1.4rem; }
+
+.missing-alert-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FFA726;
+}
+
+.missing-alert-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: var(--space-md);
+}
+
+.missing-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.missing-item {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.missing-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.missing-item-count {
+  color: #FFA726;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.missing-item-bar {
+  height: 6px;
+  background: rgba(255, 167, 38, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: var(--space-xs);
+}
+
+.missing-item-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ECDC4, #44B09E);
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.missing-item-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.missing-alert-action {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(78, 205, 196, 0.08);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.missing-alert-action strong {
+  color: #4ECDC4;
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .app-container { padding: var(--space-md); }

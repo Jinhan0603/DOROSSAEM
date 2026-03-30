@@ -912,7 +912,7 @@ const Upload = {
   // Auto-matching rules: file header keywords -> DB field key
   HEADER_ALIASES: {
     'name': ['이름', '성명', '강사명', 'name', '강사 이름'],
-    'first_cohort': ['기수', '최초 기수', 'cohort', '합격 기수', '합격기수', '몇 기'],
+    'first_cohort': ['기수', '최초 기수', 'cohort', '합격 기수', '합격기수', '몇 기', '전형', '현 기수'],
     'active_status': ['활동', '활동 상태', '활동 여부', 'status', '상태'],
     'activity_region': ['지역', '활동 지역', '거점', 'region', '활동가능지역', '활동 가능 지역'],
     'activity_time': ['시간', '활동 시간', '가능 시간', 'time', '활동가능시간', '활동 가능 시간'],
@@ -920,7 +920,7 @@ const Upload = {
     'gender': ['성별', 'gender'],
     'university': ['대학', '대학교', '학교', 'university'],
     'department': ['학과', '전공', 'department', '학부'],
-    'phone': ['전화', '연락처', '핸드폰', '전화번호', 'phone', '휴대폰'],
+    'phone': ['전화', '연락처', '핸드폰', '전화번호', 'phone', '휴대폰', '번호'],
     'email': ['이메일', '메일', 'email', 'e-mail'],
     'current_residence': ['거주지', '거주', '현 거주지', '주소', '현거주지'],
     'career_history': ['경력', '강의/개발 경력', '강의 경력', '개발 경력', '진행하셨던', 'career'],
@@ -1293,11 +1293,64 @@ const Upload = {
 
     // Recalculate and re-render
     Store.recalculateAll();
+    Store.save();
     UI.renderStats();
     UI.renderTable();
 
+    // ── Analyze missing data ──
+    const CRITICAL_FIELDS = [
+      { key: 'activity_time', label: '활동 가능 시간', icon: '⏰', desc: '강의 배정에 필수 (예: 오전-월,수,금)' },
+      { key: 'specialty', label: '전문 분야', icon: '🎯', desc: '강사 역량 파악 (예: Python, Scratch, AI)' },
+      { key: 'activity_region', label: '활동 지역', icon: '📍', desc: '강의 배정 지역 (자동 계산 가능)' },
+    ];
+
+    const totalImported = added + updated;
+    const missingReport = [];
+
+    if (totalImported > 0) {
+      for (const field of CRITICAL_FIELDS) {
+        const missingCount = Store.instructors.filter(i =>
+          !i[field.key] || i[field.key].trim() === ''
+        ).length;
+        if (missingCount > 0) {
+          missingReport.push({ ...field, missingCount, pct: Math.round(missingCount / Store.instructors.length * 100) });
+        }
+      }
+    }
+
     // Show result
     this.showStep(3);
+
+    let missingHtml = '';
+    if (missingReport.length > 0) {
+      missingHtml = `
+        <div class="missing-data-alert">
+          <div class="missing-alert-header">
+            <span class="missing-alert-icon">⚠️</span>
+            <span class="missing-alert-title">정보를 채워 주세요!</span>
+          </div>
+          <p class="missing-alert-desc">아래 정보가 부족한 강사가 있습니다. 추가 수집이 필요합니다.</p>
+          <div class="missing-items">
+            ${missingReport.map(r => `
+              <div class="missing-item">
+                <div class="missing-item-header">
+                  <span>${r.icon} ${r.label}</span>
+                  <span class="missing-item-count">${r.missingCount}명 미입력 (${r.pct}%)</span>
+                </div>
+                <div class="missing-item-bar">
+                  <div class="missing-item-fill" style="width:${100 - r.pct}%"></div>
+                </div>
+                <div class="missing-item-desc">${r.desc}</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="missing-alert-action">
+            💡 <strong>권장:</strong> 기존 구글폼의 활동시간(14번), 경력(15번) 질문으로 추가 설문을 발송하세요.
+          </div>
+        </div>
+      `;
+    }
+
     document.getElementById('uploadResult').innerHTML = `
       <div class="result-icon">🎉</div>
       <div class="result-title">일괄 등록 완료!</div>
@@ -1315,6 +1368,7 @@ const Upload = {
           <div class="result-stat-label">건너뛰기</div>
         </div>
       </div>
+      ${missingHtml}
     `;
 
     UI.showToast(`${added}명 등록, ${updated}명 업데이트 완료`, 'success');
