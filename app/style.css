@@ -1243,6 +1243,47 @@ body::before {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Score Breakdown ─── */
+.score-breakdown {
+  background: rgba(255, 107, 107, 0.03);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-md);
+}
+
+.score-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.score-row-label {
+  min-width: 120px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.score-row-label small {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.score-row-val {
+  min-width: 60px;
+  text-align: right;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 /* ─── Auto-calc Info ─── */
 .mapping-auto-info {
   grid-column: 1 / -1;

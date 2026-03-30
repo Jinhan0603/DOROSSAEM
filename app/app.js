@@ -77,19 +77,112 @@ const Store = {
     await this.loadAll();
   },
 
+  // Activity types categorized by scoring area
+  ACTIVITY_TYPES: {
+    lecture: [
+      { type: '일반 강의', point: 1 },
+      { type: '행사(캠프/대회)', point: 2 },
+      { type: 'DOROLAND', point: 3 },
+      { type: 'DLS', point: 3 },
+      { type: '운영인력', point: 4 },
+    ],
+    evaluation: [
+      { type: '강의 평가', point: 0, hasRating: true },
+      { type: '동료 피드백 제공', point: 1 },
+    ],
+    contribution: [
+      { type: '오프라인 OT 참여', point: 1 },
+      { type: 'PPT 제작 알바', point: 1 },
+      { type: '교안 제작 알바', point: 2 },
+      { type: '교구재 제작 알바', point: 2 },
+      { type: 'OT에서 강의', point: 2 },
+      { type: '교육 영상 제작', point: 3 },
+      { type: '포장 알바', point: 0.1 },
+    ],
+    bonus: [
+      { type: '마스터 추천', point: 1 },
+      { type: '학생 칭찬', point: 2 },
+      { type: '기관 담당자 칭찬', point: 3 },
+      { type: '월간 우수 도로쌤', point: 10 },
+    ],
+    penalty: [
+      { type: '30분 전 지각', point: -10 },
+      { type: '무단지각/결석', point: -999 },
+    ],
+  },
+
+  getScoreBreakdown(instId) {
+    const activities = this.activityLogs.filter(l => l.instructor_id === instId);
+    const abilities = this.abilityLogs.filter(l => l.instructor_id === instId);
+
+    // Area 1: 강의 경험 (20%)
+    const lectureTypes = this.ACTIVITY_TYPES.lecture.map(t => t.type);
+    const lectureScore = activities
+      .filter(l => lectureTypes.includes(l.activity_type))
+      .reduce((s, l) => s + (l.point || 0), 0);
+
+    // Area 2: 강의 평가 (40%)
+    const evalLogs = activities.filter(l => l.activity_type === '강의 평가');
+    let evalScore = 0;
+    if (evalLogs.length > 0) {
+      const avgRating = evalLogs.reduce((s, l) => s + (l.rating_avg || 0), 0) / evalLogs.length;
+      evalScore = Math.round(avgRating * 10) / 10; // 평균 만족도 (1~5)
+    }
+    const feedbackBonus = activities
+      .filter(l => l.activity_type === '동료 피드백 제공')
+      .reduce((s, l) => s + (l.point || 0), 0);
+
+    // Area 3: 전문성 (20%)
+    const abilityScore = abilities.reduce((s, l) => s + (l.point || 0), 0);
+
+    // Area 4: 내부 기여 (20%)
+    const contribTypes = this.ACTIVITY_TYPES.contribution.map(t => t.type);
+    const contribScore = activities
+      .filter(l => contribTypes.includes(l.activity_type))
+      .reduce((s, l) => s + (l.point || 0), 0);
+
+    // Area 5: 기타 가산/감점
+    const bonusTypes = this.ACTIVITY_TYPES.bonus.map(t => t.type);
+    const penaltyTypes = this.ACTIVITY_TYPES.penalty.map(t => t.type);
+    const bonusScore = activities
+      .filter(l => bonusTypes.includes(l.activity_type))
+      .reduce((s, l) => s + (l.point || 0), 0);
+    const penaltyScore = activities
+      .filter(l => penaltyTypes.includes(l.activity_type))
+      .reduce((s, l) => s + (l.point || 0), 0);
+
+    // Weighted total
+    const weighted = {
+      lecture: lectureScore,
+      evaluation: evalScore * 2 + feedbackBonus,  // 평균 만족도를 점수화
+      ability: abilityScore,
+      contribution: contribScore,
+      bonus: bonusScore,
+      penalty: penaltyScore,
+    };
+    const total = weighted.lecture + weighted.evaluation + weighted.ability + weighted.contribution + weighted.bonus + weighted.penalty;
+
+    return {
+      lectureScore, lectureCount: activities.filter(l => lectureTypes.includes(l.activity_type)).length,
+      evalScore, evalCount: evalLogs.length, feedbackBonus,
+      abilityScore,
+      contribScore,
+      bonusScore, penaltyScore,
+      total: Math.max(0, Math.round(total * 10) / 10),
+    };
+  },
+
   recalculateAll() {
     this.instructors.forEach(inst => {
+      const breakdown = this.getScoreBreakdown(inst.instructor_id);
       const activities = this.activityLogs.filter(l => l.instructor_id === inst.instructor_id);
-      const abilities = this.abilityLogs.filter(l => l.instructor_id === inst.instructor_id);
 
-      const activityPoints = activities.reduce((sum, l) => sum + (l.point || 0), 0);
-      const abilityPoints = abilities.reduce((sum, l) => sum + (l.point || 0), 0);
-
-      inst.total_score = activityPoints + abilityPoints;
+      inst.total_score = breakdown.total;
       inst.penalty_count = activities.filter(l => l.point < 0).length;
 
       // Auto tier assignment
-      if (inst.penalty_count >= 2 || activities.some(l => l.activity_type === '당일 강의 미참여' || l.activity_type === '강의시간보다 늦은 도착')) {
+      const hasExpulsion = activities.some(l => l.activity_type === '무단지각/결석');
+      if (hasExpulsion || inst.penalty_count >= 2) {
         inst.tier = 'Penalty';
       } else if (inst.total_score >= 75) {
         inst.tier = 'Advanced';
@@ -98,7 +191,8 @@ const Store = {
       }
 
       // Latest update
-      const allTimestamps = [...activities, ...abilities].map(l => new Date(l.timestamp)).filter(d => !isNaN(d));
+      const allTimestamps = [...activities, ...this.abilityLogs.filter(l => l.instructor_id === inst.instructor_id)]
+        .map(l => new Date(l.timestamp)).filter(d => !isNaN(d));
       if (allTimestamps.length > 0) {
         inst.last_updated = new Date(Math.max(...allTimestamps)).toISOString();
       }
@@ -524,13 +618,14 @@ const UI = {
         <div class="detail-section-title">기본 정보</div>
         <div class="detail-grid">
           <div class="detail-item"><div class="detail-item-label">최초 기수</div><div class="detail-item-value">${inst.first_cohort || '-'}</div></div>
-          <div class="detail-item"><div class="detail-item-label">총점</div><div class="detail-item-value" style="font-size:1.3rem;font-weight:800;color:var(--color-primary)">${inst.total_score}점</div></div>
           <div class="detail-item"><div class="detail-item-label">활동 지역</div><div class="detail-item-value">${inst.activity_region || '-'}</div></div>
           <div class="detail-item"><div class="detail-item-label">활동 시간</div><div class="detail-item-value">${inst.activity_time || '-'}</div></div>
           <div class="detail-item"><div class="detail-item-label">전문성</div><div class="detail-item-value">${inst.specialty || '-'}</div></div>
           <div class="detail-item"><div class="detail-item-label">패널티</div><div class="detail-item-value">${inst.penalty_count > 0 ? `<span style="color:var(--tier-penalty)">${inst.penalty_count}회</span>` : '없음'}</div></div>
         </div>
       </div>
+
+      ${this.renderScoreBreakdown(id, inst)}
 
       <div class="detail-section sensitive-section" id="sensitiveSection_${id}">
         <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -558,19 +653,183 @@ const UI = {
         `}
       </div>
 
-      <div class="tabs">
-        <button class="tab active" onclick="UI.switchDetailTab('activities', this)">활동 로그 (${activities.length})</button>
-        <button class="tab" onclick="UI.switchDetailTab('abilities', this)">역량 정보 (${abilities.length})</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:var(--space-md) 0 var(--space-sm)">
+        <div class="tabs" style="margin:0">
+          <button class="tab active" onclick="UI.switchDetailTab('activities', this)">활동 로그 (${activities.length})</button>
+          <button class="tab" onclick="UI.switchDetailTab('abilities', this)">역량 정보 (${abilities.length})</button>
+        </div>
+        <button class="btn btn-primary" style="font-size:0.78rem;padding:6px 14px" onclick="UI.openAddLogForm('${id}')">➕ 기록 추가</button>
       </div>
 
       <div id="detailTabContent">
         ${this.renderActivityList(activities)}
       </div>
+
+      <div id="addLogFormArea" style="display:none"></div>
     `;
 
     document.getElementById('detailOverlay').classList.add('active');
     this._currentDetailActivities = activities;
     this._currentDetailAbilities = abilities;
+  },
+
+  renderScoreBreakdown(id, inst) {
+    const b = Store.getScoreBreakdown(id);
+    const maxBar = Math.max(b.lectureScore, b.evalScore * 2 + b.feedbackBonus, b.abilityScore, b.contribScore, 1);
+
+    const bar = (val, max, color) => {
+      const pct = Math.min(100, (val / Math.max(max, 1)) * 100);
+      return `<div style="flex:1;height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div></div>`;
+    };
+
+    return `
+      <div class="detail-section score-breakdown">
+        <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>📊 점수 분석</span>
+          <span style="font-size:1.4rem;font-weight:800;color:var(--color-primary)">${inst.total_score}점</span>
+        </div>
+        <div class="score-rows">
+          <div class="score-row">
+            <span class="score-row-label">📖 강의 경험 <small>(${b.lectureCount}회)</small></span>
+            ${bar(b.lectureScore, 30, '#FF6B6B')}
+            <span class="score-row-val">${b.lectureScore}점</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">⭐ 강의 평가 <small>(${b.evalCount}건)</small></span>
+            ${bar(b.evalScore * 2 + b.feedbackBonus, 30, '#FFA726')}
+            <span class="score-row-val">${b.evalScore > 0 ? b.evalScore.toFixed(1) + '★ →' : ''} ${Math.round((b.evalScore * 2 + b.feedbackBonus) * 10) / 10}점</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">🎯 전문성</span>
+            ${bar(b.abilityScore, 10, '#4ECDC4')}
+            <span class="score-row-val">${b.abilityScore}점</span>
+          </div>
+          <div class="score-row">
+            <span class="score-row-label">🤝 내부 기여</span>
+            ${bar(b.contribScore, 15, '#AB47BC')}
+            <span class="score-row-val">${b.contribScore}점</span>
+          </div>
+          ${b.bonusScore > 0 ? `<div class="score-row"><span class="score-row-label">🌟 가산점</span><span class="score-row-val" style="color:var(--status-active)">+${b.bonusScore}점</span></div>` : ''}
+          ${b.penaltyScore < 0 ? `<div class="score-row"><span class="score-row-label">⚠️ 감점</span><span class="score-row-val" style="color:var(--tier-penalty)">${b.penaltyScore}점</span></div>` : ''}
+        </div>
+      </div>
+    `;
+  },
+
+  openAddLogForm(instId) {
+    const area = document.getElementById('addLogFormArea');
+    if (area.style.display !== 'none') { area.style.display = 'none'; return; }
+
+    const categories = [
+      { key: 'lecture', label: '📖 강의 참여', items: Store.ACTIVITY_TYPES.lecture },
+      { key: 'evaluation', label: '⭐ 강의 평가', items: Store.ACTIVITY_TYPES.evaluation },
+      { key: 'contribution', label: '🤝 내부 기여', items: Store.ACTIVITY_TYPES.contribution },
+      { key: 'bonus', label: '🌟 가산점', items: Store.ACTIVITY_TYPES.bonus },
+      { key: 'penalty', label: '⚠️ 감점/패널티', items: Store.ACTIVITY_TYPES.penalty },
+    ];
+
+    const typeOptions = categories.map(cat =>
+      `<optgroup label="${cat.label}">${cat.items.map(it =>
+        `<option value="${it.type}" data-point="${it.point}" data-has-rating="${it.hasRating || false}">${it.type} (${it.point >= 0 ? '+' : ''}${it.point}점)</option>`
+      ).join('')}</optgroup>`
+    ).join('');
+
+    area.innerHTML = `
+      <div class="detail-section" style="border:1px solid var(--color-primary);margin-top:var(--space-md)">
+        <div class="detail-section-title">➕ 활동 기록 추가</div>
+        <div style="display:grid;gap:var(--space-sm)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-sm)">
+            <div>
+              <label class="form-label">활동 유형</label>
+              <select class="form-input" id="logType" onchange="UI.onLogTypeChange()">
+                ${typeOptions}
+              </select>
+            </div>
+            <div>
+              <label class="form-label">날짜</label>
+              <input class="form-input" id="logDate" type="date" value="${new Date().toISOString().slice(0, 10)}">
+            </div>
+          </div>
+          <div id="ratingFields" style="display:none">
+            <label class="form-label">만족도 평가</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-sm)">
+              <div>
+                <label style="font-size:0.72rem;color:var(--text-muted)">학생 (1~5)</label>
+                <input class="form-input" id="logRatingStudent" type="number" min="1" max="5" step="0.1" placeholder="4.5">
+              </div>
+              <div>
+                <label style="font-size:0.72rem;color:var(--text-muted)">기관 (1~5)</label>
+                <input class="form-input" id="logRatingOrg" type="number" min="1" max="5" step="0.1" placeholder="4.0">
+              </div>
+              <div>
+                <label style="font-size:0.72rem;color:var(--text-muted)">동료 (1~5)</label>
+                <input class="form-input" id="logRatingPeer" type="number" min="1" max="5" step="0.1" placeholder="4.2">
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="form-label">비고 (선택)</label>
+            <input class="form-input" id="logNote" placeholder="예: 인재육성재단 OT">
+          </div>
+          <div style="display:flex;gap:var(--space-sm);justify-content:flex-end">
+            <button class="btn btn-secondary" onclick="document.getElementById('addLogFormArea').style.display='none'">취소</button>
+            <button class="btn btn-primary" onclick="UI.submitActivityLog('${instId}')">💾 저장</button>
+          </div>
+        </div>
+      </div>
+    `;
+    area.style.display = 'block';
+  },
+
+  onLogTypeChange() {
+    const sel = document.getElementById('logType');
+    const opt = sel.options[sel.selectedIndex];
+    const hasRating = opt.dataset.hasRating === 'true';
+    document.getElementById('ratingFields').style.display = hasRating ? 'block' : 'none';
+  },
+
+  submitActivityLog(instId) {
+    const typeEl = document.getElementById('logType');
+    const opt = typeEl.options[typeEl.selectedIndex];
+    const actType = opt.value;
+    const basePoint = parseFloat(opt.dataset.point);
+    const hasRating = opt.dataset.hasRating === 'true';
+    const date = document.getElementById('logDate').value;
+    const note = document.getElementById('logNote').value;
+
+    const log = {
+      timestamp: new Date(date).toISOString(),
+      instructor_id: instId,
+      activity_type: actType,
+      activity_value: '',
+      point: basePoint,
+      note: note,
+      source: 'manager',
+    };
+
+    // Handle evaluation ratings
+    if (hasRating) {
+      const student = parseFloat(document.getElementById('logRatingStudent').value) || 0;
+      const org = parseFloat(document.getElementById('logRatingOrg').value) || 0;
+      const peer = parseFloat(document.getElementById('logRatingPeer').value) || 0;
+      if (student === 0 && org === 0 && peer === 0) {
+        this.showToast('만족도 점수를 하나 이상 입력해주세요', 'error');
+        return;
+      }
+      const avg = ((student * 0.4 + org * 0.4 + peer * 0.2) || 0);
+      log.rating_avg = Math.round(avg * 10) / 10;
+      log.rating_student = student;
+      log.rating_org = org;
+      log.rating_peer = peer;
+      log.activity_value = `평균 ${log.rating_avg}점`;
+      log.point = 0; // Score is calculated in breakdown
+    }
+
+    Store.addActivityLog(log);
+    this.showToast(`${actType} 기록이 추가되었습니다`, 'success');
+    this.renderStats();
+    this.renderTable();
+    this.openDetail(instId); // Refresh detail
   },
 
   switchDetailTab(tab, btnEl) {
