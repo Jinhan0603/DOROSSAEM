@@ -1256,6 +1256,9 @@ const Upload = {
     { key: 'specialty', label: '전문성', hidden: true },
     { key: 'career_history', label: '강의/개발 경력', hidden: true },
     { key: 'active_status', label: '활동 상태', hidden: true },
+    { key: 'lecture_count', label: '강의 횟수', hidden: true },
+    { key: 'lecture_hours', label: '강의 시간', hidden: true },
+    { key: 'penalty_score', label: '패널티 점수', hidden: true },
   ],
 
   // Default status for all imported instructors
@@ -1276,6 +1279,9 @@ const Upload = {
     'email': ['이메일', '메일', 'email', 'e-mail'],
     'current_residence': ['거주지', '거주', '현 거주지', '주소', '현거주지'],
     'career_history': ['경력', '강의/개발 경력', '강의 경력', '개발 경력', '진행하셨던', 'career'],
+    'lecture_count': ['횟수', '강의 횟수', '총 횟수', '강의횟수', '참여횟수'],
+    'lecture_hours': ['시간', '강의 시간', '총 시간', '강의시간'],
+    'penalty_score': ['패널티 점수', '패널티'],
   },
 
   init() {
@@ -1651,8 +1657,52 @@ const Upload = {
           email: data.email || '',
           current_residence: data.current_residence || '',
         };
-        Store.addInstructor(newInstructor);
+        Store.instructors.push(newInstructor); // Add without recalculate yet
         existingNames.set(name, newInstructor);
+
+        // ── Auto-generate activity logs from Excel data ──
+        const instId = newInstructor.instructor_id;
+        const now = new Date().toISOString();
+
+        // 1) Lecture count → 강의 경험 로그
+        const lectureCount = parseInt(data.lecture_count) || 0;
+        if (lectureCount > 0) {
+          Store.activityLogs.push({
+            timestamp: now,
+            instructor_id: instId,
+            activity_type: '일반 강의',
+            activity_value: `${lectureCount}회 (기존 데이터)`,
+            point: lectureCount,
+            note: `엑셀 데이터에서 자동 변환 (횟수: ${lectureCount})`,
+            source: 'excel_import',
+          });
+        }
+
+        // 2) Department → 전문성 역량 로그
+        const dept = (data.department || '').toLowerCase();
+        if (dept) {
+          let majorType = 'other_major';
+          let majorPoint = 0;
+          if (/로봇|전자|전기|기계|컴퓨터|소프트웨어|sw|정보통신|it|ai|인공지능|데이터|제어/.test(dept)) {
+            majorType = 'engineering_major'; majorPoint = 2;
+          } else if (/교육|사범/.test(dept)) {
+            majorType = 'education_major'; majorPoint = 2;
+          } else if (/이학|디자인|미디어|영상|콘텐츠/.test(dept)) {
+            majorType = 'science_design_related'; majorPoint = 1;
+          }
+          if (majorPoint > 0) {
+            Store.abilityLogs.push({
+              timestamp: now,
+              instructor_id: instId,
+              ability_type: 'major_track',
+              ability_value: majorType,
+              point: majorPoint,
+              note: `${data.department} (자동 분류)`,
+              source: 'excel_import',
+            });
+          }
+        }
+
         added++;
       }
     }
