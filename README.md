@@ -2,6 +2,8 @@
 
 > 강사 역량 데이터를 기반으로 강의 배정 → 등급 관리 → 운영 자동화를 단계적으로 달성하는 시스템
 
+### 🔗 [▶ 강사관리 도구 바로가기](https://jinhan0603.github.io/DOROSSAEM/app/index.html)
+
 ## 📋 프로젝트 개요
 
 **DORO**의 강사(도로쌤)를 체계적으로 관리하기 위한 시스템입니다.
@@ -43,11 +45,11 @@ DORO 강사관리 시스템 개선/
 
 ## 🚀 사용 방법
 
-### 관리 도구 실행
-`app/index.html`을 브라우저에서 직접 열면 됩니다.
+### 온라인 (GitHub Pages)
+👉 **https://jinhan0603.github.io/DOROSSAEM/app/index.html**
 
+### 로컬 실행
 ```bash
-# 또는 Live Server로 실행
 npx live-server app/
 ```
 
