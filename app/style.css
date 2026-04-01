@@ -1284,6 +1284,34 @@ body::before {
   color: var(--text-primary);
 }
 
+.score-row[title] {
+  cursor: help;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+
+.score-row[title]:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.score-grade-hint {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: var(--space-sm);
+}
+
+.score-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 /* ─── Auto-calc Info ─── */
 .mapping-auto-info {
   grid-column: 1 / -1;

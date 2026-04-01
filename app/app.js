@@ -163,11 +163,17 @@ const Store = {
     const total = weighted.lecture + weighted.evaluation + weighted.ability + weighted.contribution + weighted.bonus + weighted.penalty;
 
     return {
-      lectureScore, lectureCount: activities.filter(l => lectureTypes.includes(l.activity_type)).length,
+      lectureScore, lectureCount: lectureScore, // Use total points as count (1 point = 1 lecture)
+      lectureLogs: activities.filter(l => lectureTypes.includes(l.activity_type)),
       evalScore, evalCount: evalLogs.length, feedbackBonus,
+      evalLogs,
       abilityScore,
+      abilityLogs: abilities,
       contribScore,
+      contribLogs: activities.filter(l => contribTypes.includes(l.activity_type)),
       bonusScore, penaltyScore,
+      bonusLogs: activities.filter(l => bonusTypes.includes(l.activity_type)),
+      penaltyLogs: activities.filter(l => penaltyTypes.includes(l.activity_type)),
       total: Math.max(0, Math.round(total * 10) / 10),
     };
   },
@@ -675,12 +681,36 @@ const UI = {
 
   renderScoreBreakdown(id, inst) {
     const b = Store.getScoreBreakdown(id);
-    const maxBar = Math.max(b.lectureScore, b.evalScore * 2 + b.feedbackBonus, b.abilityScore, b.contribScore, 1);
 
     const bar = (val, max, color) => {
       const pct = Math.min(100, (val / Math.max(max, 1)) * 100);
       return `<div style="flex:1;height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div></div>`;
     };
+
+    // Build tooltip texts
+    const lectureTooltip = b.lectureLogs.length > 0
+      ? b.lectureLogs.map(l => `${l.activity_type}: ${l.activity_value || l.point + '점'} ${l.note ? '(' + l.note + ')' : ''}`).join('\n')
+      : '강의 경험 기록 없음';
+
+    const evalTooltip = b.evalLogs.length > 0
+      ? b.evalLogs.map(l => `학생:${l.rating_student || '-'} 기관:${l.rating_org || '-'} 동료:${l.rating_peer || '-'} → 평균 ${l.rating_avg}점`).join('\n')
+      : '강의 평가 기록 없음\n→ 강의 후 학생/기관/동료 만족도를 입력하세요';
+
+    const abilityTooltip = b.abilityLogs.length > 0
+      ? b.abilityLogs.map(l => {
+          const labels = {major_track:'전공',project_track:'프로젝트',teaching_track:'교육경험',skill_track:'핵심스킬',credential_track:'자격증/연구',leadership_track:'리더십'};
+          return `${labels[l.ability_type] || l.ability_type}: +${l.point}점 ${l.note ? '(' + l.note + ')' : ''}`;
+        }).join('\n')
+      : '역량 정보 없음\n→ 전공/자격증/프로젝트 경험을 입력하세요';
+
+    const contribTooltip = b.contribLogs.length > 0
+      ? b.contribLogs.map(l => `${l.activity_type}: +${l.point}점 ${l.note ? '(' + l.note + ')' : ''}`).join('\n')
+      : '내부 기여 기록 없음\n→ OT 참여, 교안/교구재 제작 등을 입력하세요';
+
+    // Grade explanation
+    const gradeExplain = inst.total_score >= 75
+      ? '✅ 75점 이상 → Advanced (상위 20명은 Master)'
+      : `⚠️ ${75 - inst.total_score}점 더 필요 → Advanced 승급`;
 
     return `
       <div class="detail-section score-breakdown">
@@ -688,30 +718,32 @@ const UI = {
           <span>📊 점수 분석</span>
           <span style="font-size:1.4rem;font-weight:800;color:var(--color-primary)">${inst.total_score}점</span>
         </div>
+        <div class="score-grade-hint">${gradeExplain}</div>
         <div class="score-rows">
-          <div class="score-row">
+          <div class="score-row" title="${lectureTooltip.replace(/"/g, '&quot;')}">
             <span class="score-row-label">📖 강의 경험 <small>(${b.lectureCount}회)</small></span>
-            ${bar(b.lectureScore, 30, '#FF6B6B')}
+            ${bar(b.lectureScore, 120, '#FF6B6B')}
             <span class="score-row-val">${b.lectureScore}점</span>
           </div>
-          <div class="score-row">
+          <div class="score-row" title="${evalTooltip.replace(/"/g, '&quot;')}">
             <span class="score-row-label">⭐ 강의 평가 <small>(${b.evalCount}건)</small></span>
             ${bar(b.evalScore * 2 + b.feedbackBonus, 30, '#FFA726')}
             <span class="score-row-val">${b.evalScore > 0 ? b.evalScore.toFixed(1) + '★ →' : ''} ${Math.round((b.evalScore * 2 + b.feedbackBonus) * 10) / 10}점</span>
           </div>
-          <div class="score-row">
-            <span class="score-row-label">🎯 전문성</span>
+          <div class="score-row" title="${abilityTooltip.replace(/"/g, '&quot;')}">
+            <span class="score-row-label">🎯 전문성 <small>(${b.abilityLogs.length}건)</small></span>
             ${bar(b.abilityScore, 10, '#4ECDC4')}
             <span class="score-row-val">${b.abilityScore}점</span>
           </div>
-          <div class="score-row">
-            <span class="score-row-label">🤝 내부 기여</span>
+          <div class="score-row" title="${contribTooltip.replace(/"/g, '&quot;')}">
+            <span class="score-row-label">🤝 내부 기여 <small>(${b.contribLogs.length}건)</small></span>
             ${bar(b.contribScore, 15, '#AB47BC')}
             <span class="score-row-val">${b.contribScore}점</span>
           </div>
-          ${b.bonusScore > 0 ? `<div class="score-row"><span class="score-row-label">🌟 가산점</span><span class="score-row-val" style="color:var(--status-active)">+${b.bonusScore}점</span></div>` : ''}
-          ${b.penaltyScore < 0 ? `<div class="score-row"><span class="score-row-label">⚠️ 감점</span><span class="score-row-val" style="color:var(--tier-penalty)">${b.penaltyScore}점</span></div>` : ''}
+          ${b.bonusScore > 0 ? `<div class="score-row" title="${b.bonusLogs.map(l => l.activity_type + ': +' + l.point + '점').join('\n').replace(/"/g, '&quot;')}"><span class="score-row-label">🌟 가산점</span><span class="score-row-val" style="color:var(--status-active)">+${b.bonusScore}점</span></div>` : ''}
+          ${b.penaltyScore < 0 ? `<div class="score-row" title="${b.penaltyLogs.map(l => l.activity_type + ': ' + l.point + '점').join('\n').replace(/"/g, '&quot;')}"><span class="score-row-label">⚠️ 감점</span><span class="score-row-val" style="color:var(--tier-penalty)">${b.penaltyScore}점</span></div>` : ''}
         </div>
+        <div class="score-hint">💡 각 항목에 마우스를 올리면 상세 근거를 확인할 수 있습니다</div>
       </div>
     `;
   },
