@@ -1312,6 +1312,18 @@ body::before {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* ─── Score Row Click-to-Expand ─── */
+.score-row-wrap { border-radius: var(--radius-sm); }
+.score-row-wrap .score-row { cursor: pointer; padding: 6px 8px; border-radius: var(--radius-sm); transition: background 0.2s; }
+.score-row-wrap .score-row:hover { background: rgba(255, 255, 255, 0.04); }
+.score-row-toggle { font-size: 0.7rem; color: var(--text-muted); transition: transform 0.2s; margin-left: 4px; }
+.score-row-wrap.open .score-row-toggle { transform: rotate(90deg); }
+.score-row-detail { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s; padding: 0 8px; }
+.score-row-wrap.open .score-row-detail { max-height: 200px; padding: 6px 8px 10px; }
+.sd-item { font-size: 0.75rem; color: var(--text-secondary); padding: 2px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
+.sd-item:last-child { border-bottom: none; }
+.sd-empty { font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
+
 /* ─── Auto-calc Info ─── */
 .mapping-auto-info {
   grid-column: 1 / -1;

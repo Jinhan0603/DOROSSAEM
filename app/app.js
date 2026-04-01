@@ -687,66 +687,60 @@ const UI = {
       return `<div style="flex:1;height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${color};border-radius:3px"></div></div>`;
     };
 
-    // Build tooltip texts
-    const lectureTooltip = b.lectureLogs.length > 0
-      ? b.lectureLogs.map(l => `${l.activity_type}: ${l.activity_value || l.point + '점'} ${l.note ? '(' + l.note + ')' : ''}`).join('\n')
-      : '강의 경험 기록 없음';
+    const lectureDetail = b.lectureLogs.length > 0
+      ? b.lectureLogs.map(l => `<div class="sd-item">${l.activity_type}: ${l.activity_value || '+' + l.point + '\uc810'}</div>`).join('')
+      : '<div class="sd-empty">\uc544\uc9c1 \uac15\uc758 \uae30\ub85d \uc5c6\uc74c</div>';
 
-    const evalTooltip = b.evalLogs.length > 0
-      ? b.evalLogs.map(l => `학생:${l.rating_student || '-'} 기관:${l.rating_org || '-'} 동료:${l.rating_peer || '-'} → 평균 ${l.rating_avg}점`).join('\n')
-      : '강의 평가 기록 없음\n→ 강의 후 학생/기관/동료 만족도를 입력하세요';
+    const evalDetail = b.evalLogs.length > 0
+      ? b.evalLogs.map(l => `<div class="sd-item">\ud559\uc0dd:${l.rating_student||'-'} / \uae30\uad00:${l.rating_org||'-'} / \ub3d9\ub8cc:${l.rating_peer||'-'} \u2192 \ud3c9\uade0 ${l.rating_avg}\uc810</div>`).join('')
+      : '<div class="sd-empty">\uac15\uc758 \ud3c9\uac00 \ubbf8\uc785\ub825 \u2192 \ud559\uc0dd/\uae30\uad00/\ub3d9\ub8cc \ub9cc\uc871\ub3c4\ub97c \uc785\ub825\ud558\uc138\uc694</div>';
 
-    const abilityTooltip = b.abilityLogs.length > 0
+    const abilityDetail = b.abilityLogs.length > 0
       ? b.abilityLogs.map(l => {
-          const labels = {major_track:'전공',project_track:'프로젝트',teaching_track:'교육경험',skill_track:'핵심스킬',credential_track:'자격증/연구',leadership_track:'리더십'};
-          return `${labels[l.ability_type] || l.ability_type}: +${l.point}점 ${l.note ? '(' + l.note + ')' : ''}`;
-        }).join('\n')
-      : '역량 정보 없음\n→ 전공/자격증/프로젝트 경험을 입력하세요';
+          const labels = {major_track:'\uc804\uacf5',project_track:'\ud504\ub85c\uc81d\ud2b8',teaching_track:'\uad50\uc721\uacbd\ud5d8',skill_track:'\ud575\uc2ec\uc2a4\ud0ac',credential_track:'\uc790\uaca9\uc99d',leadership_track:'\ub9ac\ub354\uc2ed'};
+          return `<div class="sd-item">${labels[l.ability_type]||l.ability_type}: +${l.point}\uc810 ${l.note?'('+l.note+')':''}</div>`;
+        }).join('')
+      : '<div class="sd-empty">\uc5ed\ub7c9 \uc815\ubcf4 \uc5c6\uc74c \u2192 \uc804\uacf5/\uc790\uaca9\uc99d \ub370\uc774\ud130 \ud544\uc694</div>';
 
-    const contribTooltip = b.contribLogs.length > 0
-      ? b.contribLogs.map(l => `${l.activity_type}: +${l.point}점 ${l.note ? '(' + l.note + ')' : ''}`).join('\n')
-      : '내부 기여 기록 없음\n→ OT 참여, 교안/교구재 제작 등을 입력하세요';
+    const contribDetail = b.contribLogs.length > 0
+      ? b.contribLogs.map(l => `<div class="sd-item">${l.activity_type}: +${l.point}\uc810</div>`).join('')
+      : '<div class="sd-empty">\ub0b4\ubd80 \uae30\uc5ec \uc5c6\uc74c \u2192 OT \ucc38\uc5ec, \uad50\uc548 \uc81c\uc791 \ub4f1</div>';
 
-    // Grade explanation
     const gradeExplain = inst.total_score >= 75
-      ? '✅ 75점 이상 → Advanced (상위 20명은 Master)'
-      : `⚠️ ${75 - inst.total_score}점 더 필요 → Advanced 승급`;
+      ? '\u2705 75\uc810 \uc774\uc0c1 \u2192 Advanced (\uc0c1\uc704 20\uba85\uc740 Master)'
+      : `\u26a0\ufe0f Advanced \uc2b9\uae09\uae4c\uc9c0 <strong>${Math.ceil(75 - inst.total_score)}\uc810</strong> \ub354 \ud544\uc694`;
+
+    const row = (icon, label, count, unit, score, max, color, detail) => `
+      <div class="score-row-wrap">
+        <div class="score-row" onclick="this.parentElement.classList.toggle('open')">
+          <span class="score-row-label">${icon} ${label} <small>(${count}${unit})</small></span>
+          ${bar(score, max, color)}
+          <span class="score-row-val">${score}\uc810</span>
+          <span class="score-row-toggle">\u25b8</span>
+        </div>
+        <div class="score-row-detail">${detail}</div>
+      </div>`;
 
     return `
       <div class="detail-section score-breakdown">
         <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between">
-          <span>📊 점수 분석</span>
-          <span style="font-size:1.4rem;font-weight:800;color:var(--color-primary)">${inst.total_score}점</span>
+          <span>\ud83d\udcca \uc810\uc218 \ubd84\uc11d</span>
+          <span style="font-size:1.4rem;font-weight:800;color:var(--color-primary)">${inst.total_score}\uc810</span>
         </div>
         <div class="score-grade-hint">${gradeExplain}</div>
         <div class="score-rows">
-          <div class="score-row" title="${lectureTooltip.replace(/"/g, '&quot;')}">
-            <span class="score-row-label">📖 강의 경험 <small>(${b.lectureCount}회)</small></span>
-            ${bar(b.lectureScore, 120, '#FF6B6B')}
-            <span class="score-row-val">${b.lectureScore}점</span>
-          </div>
-          <div class="score-row" title="${evalTooltip.replace(/"/g, '&quot;')}">
-            <span class="score-row-label">⭐ 강의 평가 <small>(${b.evalCount}건)</small></span>
-            ${bar(b.evalScore * 2 + b.feedbackBonus, 30, '#FFA726')}
-            <span class="score-row-val">${b.evalScore > 0 ? b.evalScore.toFixed(1) + '★ →' : ''} ${Math.round((b.evalScore * 2 + b.feedbackBonus) * 10) / 10}점</span>
-          </div>
-          <div class="score-row" title="${abilityTooltip.replace(/"/g, '&quot;')}">
-            <span class="score-row-label">🎯 전문성 <small>(${b.abilityLogs.length}건)</small></span>
-            ${bar(b.abilityScore, 10, '#4ECDC4')}
-            <span class="score-row-val">${b.abilityScore}점</span>
-          </div>
-          <div class="score-row" title="${contribTooltip.replace(/"/g, '&quot;')}">
-            <span class="score-row-label">🤝 내부 기여 <small>(${b.contribLogs.length}건)</small></span>
-            ${bar(b.contribScore, 15, '#AB47BC')}
-            <span class="score-row-val">${b.contribScore}점</span>
-          </div>
-          ${b.bonusScore > 0 ? `<div class="score-row" title="${b.bonusLogs.map(l => l.activity_type + ': +' + l.point + '점').join('\n').replace(/"/g, '&quot;')}"><span class="score-row-label">🌟 가산점</span><span class="score-row-val" style="color:var(--status-active)">+${b.bonusScore}점</span></div>` : ''}
-          ${b.penaltyScore < 0 ? `<div class="score-row" title="${b.penaltyLogs.map(l => l.activity_type + ': ' + l.point + '점').join('\n').replace(/"/g, '&quot;')}"><span class="score-row-label">⚠️ 감점</span><span class="score-row-val" style="color:var(--tier-penalty)">${b.penaltyScore}점</span></div>` : ''}
+          ${row('\ud83d\udcd6', '\uac15\uc758 \uacbd\ud5d8', b.lectureCount, '\ud68c', b.lectureScore, 120, '#FF6B6B', lectureDetail)}
+          ${row('\u2b50', '\uac15\uc758 \ud3c9\uac00', b.evalCount, '\uac74', Math.round((b.evalScore * 2 + b.feedbackBonus) * 10) / 10, 30, '#FFA726', evalDetail)}
+          ${row('\ud83c\udfaf', '\uc804\ubb38\uc131', b.abilityLogs.length, '\uac74', b.abilityScore, 10, '#4ECDC4', abilityDetail)}
+          ${row('\ud83e\udd1d', '\ub0b4\ubd80 \uae30\uc5ec', b.contribLogs.length, '\uac74', b.contribScore, 15, '#AB47BC', contribDetail)}
+          ${b.bonusScore > 0 ? `<div class="score-row"><span class="score-row-label">\ud83c\udf1f \uac00\uc0b0\uc810</span><span class="score-row-val" style="color:var(--status-active)">+${b.bonusScore}\uc810</span></div>` : ''}
+          ${b.penaltyScore < 0 ? `<div class="score-row"><span class="score-row-label">\u26a0\ufe0f \uac10\uc810</span><span class="score-row-val" style="color:var(--tier-penalty)">${b.penaltyScore}\uc810</span></div>` : ''}
         </div>
-        <div class="score-hint">💡 각 항목에 마우스를 올리면 상세 근거를 확인할 수 있습니다</div>
+        <div class="score-hint">\ud83d\udca1 \uac01 \ud56d\ubaa9\uc744 \ud074\ub9ad\ud558\uba74 \uc0c1\uc138 \uadfc\uac70\ub97c \ubcfc \uc218 \uc788\uc2b5\ub2c8\ub2e4</div>
       </div>
     `;
   },
+
 
   openAddLogForm(instId) {
     const area = document.getElementById('addLogFormArea');
