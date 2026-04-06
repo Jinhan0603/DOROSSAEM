@@ -97,7 +97,7 @@ function refreshDashboard() {
     document.getElementById('q-incidents').textContent = incidents;
 
     document.getElementById('stat-total-instructors').textContent = instructors.length;
-    document.getElementById('stat-masters').textContent = instructors.filter(i => i.grade === 'Master').length;
+    document.getElementById('stat-masters').textContent = instructors.filter(i => (i.grade || i.tier) === 'Master').length;
     document.getElementById('stat-total-lectures').textContent = lectures.length;
     
     const scores = instructors.filter(i => i.total_score > 0).map(i => i.total_score);
@@ -148,13 +148,13 @@ function renderTopInstructors() {
     }
 
     container.innerHTML = top.map((ins, idx) => {
-        const gradeInfo = ScoreCalculator.calcGrade(ins.total_score);
+        const gradeInfo = ScoreCalculator.calcGrade(ins.total_score || 0);
         return `<div class="approval-item" style="cursor:pointer;" onclick="showInstructorProfile('${ins.instructor_id}')">
             <div class="approval-info">
-                <div class="approval-title">${idx + 1}. ${ins.name} <span class="badge ${ins.grade.toLowerCase()}">${gradeInfo.icon} ${ins.grade}</span></div>
-                <div class="approval-desc">${ins.major} · 총점 ${ins.total_score}</div>
+                <div class="approval-title">${idx + 1}. ${ins.name || ''} <span class="badge ${(ins.grade || ins.tier || 'trainee').toLowerCase()}">${gradeInfo.icon} ${ins.grade || ins.tier || 'Trainee'}</span></div>
+                <div class="approval-desc">${ins.major || ins.specialty || ''} · 총점 ${ins.total_score || 0}</div>
             </div>
-            <div style="font-size:1.4rem; font-weight:800; color:var(--accent-blue);">${ins.total_score}</div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--accent-blue);">${ins.total_score || 0}</div>
         </div>`;
     }).join('');
 }
@@ -318,21 +318,21 @@ function renderInstructors() {
     }
 
     tbody.innerHTML = instructors.map(ins => {
-        const gradeInfo = ScoreCalculator.calcGrade(ins.total_score);
-        const evalDisplay = ins.score_evaluation !== null ? ins.score_evaluation.toFixed(1) : '<span class="text-muted">-</span>';
+        const gradeInfo = ScoreCalculator.calcGrade(ins.total_score || 0);
+        const evalDisplay = ins.score_evaluation != null ? Number(ins.score_evaluation).toFixed(1) : '<span class="text-muted">-</span>';
         const statusBadge = ins.assignment_block 
             ? '<span class="badge blocked">차단</span>' 
             : '<span class="badge active">활성</span>';
         
         return `<tr style="cursor:pointer;" onclick="showInstructorProfile('${ins.instructor_id}')">
-            <td class="name-cell">${ins.name}</td>
-            <td>${ins.major}</td>
-            <td style="font-weight:800; color:var(--accent-blue);">${ins.total_score}</td>
-            <td><span class="badge ${ins.grade.toLowerCase()}">${gradeInfo.icon} ${ins.grade}</span></td>
-            <td>${ins.score_experience}</td>
+            <td class="name-cell">${ins.name || ''}</td>
+            <td>${ins.major || ins.specialty || ''}</td>
+            <td style="font-weight:800; color:var(--accent-blue);">${ins.total_score || 0}</td>
+            <td><span class="badge ${(ins.grade || 'trainee').toLowerCase()}">${gradeInfo.icon} ${ins.grade || ins.tier || 'Trainee'}</span></td>
+            <td>${ins.score_experience || 0}</td>
             <td>${evalDisplay}</td>
-            <td>${ins.score_expertise}</td>
-            <td>${ins.score_contribution}</td>
+            <td>${ins.score_expertise || 0}</td>
+            <td>${ins.score_contribution || 0}</td>
             <td>${statusBadge}</td>
             <td><button class="btn btn-sm" onclick="event.stopPropagation(); showInstructorProfile('${ins.instructor_id}')"><i class="ph ph-eye"></i></button></td>
         </tr>`;
@@ -344,28 +344,29 @@ function showInstructorProfile(id) {
     const ins = DB.instructors.getById(id);
     if (!ins) return;
     
-    const gradeInfo = ScoreCalculator.calcGrade(ins.total_score);
-    const logs = DB.activityLog.getByInstructor(id).sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+    const gradeInfo = ScoreCalculator.calcGrade(ins.total_score || 0);
+    const logs = DB.activityLog.getByInstructor(id).sort((a,b) => new Date(b.created_at || b.timestamp || 0) - new Date(a.created_at || a.timestamp || 0)).slice(0, 10);
     const abilities = DB.abilityLog.getByInstructor(id);
 
-    const evalDisplay = ins.score_evaluation !== null ? ins.score_evaluation.toFixed(1) : '-';
+    const evalDisplay = ins.score_evaluation != null ? Number(ins.score_evaluation).toFixed(1) : '-';
     
     document.getElementById('profile-modal-body').innerHTML = `
         <div class="profile-card" style="padding:0;">
-            <div class="profile-avatar">${ins.name.charAt(0)}</div>
+            <div class="profile-avatar">${(ins.name || '?').charAt(0)}</div>
             <div class="profile-info">
-                <div class="profile-name">${ins.name} <span class="badge ${ins.grade.toLowerCase()}" style="font-size:0.8rem;">${gradeInfo.icon} ${ins.grade}</span>
+                <div class="profile-name">${ins.name || ''} <span class="badge ${(ins.grade || ins.tier || 'trainee').toLowerCase()}" style="font-size:0.8rem;">${gradeInfo.icon} ${ins.grade || ins.tier || 'Trainee'}</span>
                     ${ins.assignment_block ? '<span class="badge blocked" style="margin-left:4px;">🚫 배정차단</span>' : ''}
                 </div>
                 <div class="profile-meta">
-                    <span><i class="ph ph-graduation-cap"></i> ${ins.major}</span>
-                    <span><i class="ph ph-envelope"></i> ${ins.email}</span>
-                    <span><i class="ph ph-phone"></i> ${ins.phone}</span>
-                    <span><i class="ph ph-calendar"></i> 가입: ${ins.join_date}</span>
+                    <span><i class="ph ph-graduation-cap"></i> ${ins.major || ins.specialty || '-'}</span>
+                    <span><i class="ph ph-envelope"></i> ${ins.email || '-'}</span>
+                    <span><i class="ph ph-phone"></i> ${ins.phone || '-'}</span>
+                    <span><i class="ph ph-calendar"></i> 가입: ${ins.join_date || ins.first_cohort || '-'}</span>
+                    ${ins.activity_region ? `<span><i class="ph ph-map-pin"></i> ${ins.activity_region}</span>` : ''}
                 </div>
                 <div class="total-score-display">
                     <div>
-                        <div class="total-score-number" style="color:${gradeInfo.color};">${ins.total_score}</div>
+                        <div class="total-score-number" style="color:${gradeInfo.color};">${ins.total_score || 0}</div>
                         <div class="total-score-label">총점</div>
                     </div>
                 </div>
