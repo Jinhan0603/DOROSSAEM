@@ -56,25 +56,34 @@ const DB = {
         add(data) {
             const all = this.getAll();
             const instructor = {
-                instructor_id: DB._nextId('INS'),
+                instructor_id: data.instructor_id || DB._nextId('INS'),
                 name: data.name || '',
-                major: data.major || '',
+                major: data.major || data.specialty || '',
                 phone: data.phone || '',
                 email: data.email || '',
                 join_date: data.join_date || new Date().toISOString().split('T')[0],
-                status: data.status || 'active',
+                status: data.status || data.active_status || 'active',
                 // 점수 필드
-                score_experience: 0,
-                score_evaluation: null,
-                score_expertise: 0,
-                score_contribution: 0,
-                bonus_penalty: 0,
-                total_score: 0,
-                grade: 'Trainee',
-                assignment_block: false,
-                block_reason: null,
-                last_calculated_at: null,
-                created_at: new Date().toISOString()
+                score_experience: data.score_experience || 0,
+                score_evaluation: data.score_evaluation || null,
+                score_expertise: data.score_expertise || 0,
+                score_contribution: data.score_contribution || 0,
+                bonus_penalty: data.bonus_penalty || 0,
+                total_score: data.total_score || 0,
+                grade: data.grade || data.tier || 'Trainee',
+                assignment_block: data.assignment_block || false,
+                block_reason: data.block_reason || null,
+                last_calculated_at: data.last_calculated_at || null,
+                created_at: data.created_at || new Date().toISOString(),
+                // DOROSSAEM 호환 필드
+                specialty: data.specialty || data.major || '',
+                activity_region: data.activity_region || '',
+                activity_time: data.activity_time || '',
+                first_cohort: data.first_cohort || '',
+                active_status: data.active_status || data.status || 'active',
+                tier: data.tier || data.grade || 'Trainee',
+                penalty_count: data.penalty_count || 0,
+                last_updated: data.last_updated || null,
             };
             all.push(instructor);
             DB._set(DB.KEYS.INSTRUCTORS, all);
@@ -85,6 +94,13 @@ const DB = {
             const all = this.getAll();
             const idx = all.findIndex(i => i.instructor_id === id);
             if (idx === -1) return null;
+            // Sync bidirectional fields
+            if (updates.status) updates.active_status = updates.status;
+            if (updates.active_status) updates.status = updates.active_status;
+            if (updates.grade) updates.tier = updates.grade;
+            if (updates.tier) updates.grade = updates.tier;
+            if (updates.major) updates.specialty = updates.specialty || updates.major;
+            if (updates.specialty) updates.major = updates.major || updates.specialty;
             all[idx] = { ...all[idx], ...updates };
             DB._set(DB.KEYS.INSTRUCTORS, all);
             return all[idx];

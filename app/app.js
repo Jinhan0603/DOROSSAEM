@@ -4,30 +4,88 @@
  */
 
 // ===== Data Store =====
+// Uses shared localStorage keys with DORO Admin for data sync
 const Store = {
   instructors: [],
   activityLogs: [],
   abilityLogs: [],
-  STORAGE_KEY: 'DORO_DATA_V2',
+  // Shared keys with Admin (same GitHub Pages domain = shared localStorage)
+  KEYS: {
+    INSTRUCTORS: 'doro_instructors',
+    ACTIVITY_LOG: 'doro_activity_log',
+    ABILITY_LOG: 'doro_ability_log',
+  },
+  // Legacy key for migration
+  LEGACY_KEY: 'DORO_DATA_V2',
+
+  // ── Field mapping: DOROSSAEM ↔ Admin ──
+  _toSharedFormat(inst) {
+    // Ensure both field naming conventions exist
+    return {
+      ...inst,
+      // Admin fields from DOROSSAEM fields
+      status: inst.active_status || inst.status || 'active',
+      grade: inst.tier || inst.grade || 'Trainee',
+      major: inst.specialty || inst.major || '',
+      // DOROSSAEM fields from Admin fields
+      active_status: inst.active_status || inst.status || 'active',
+      tier: inst.tier || inst.grade || 'General',
+      specialty: inst.specialty || inst.major || '',
+    };
+  },
+
+  _fromSharedFormat(inst) {
+    // Read shared data back into DOROSSAEM format
+    return {
+      ...inst,
+      active_status: inst.active_status || inst.status || 'active',
+      tier: inst.tier || this._mapGradeToTier(inst.grade) || 'General',
+      specialty: inst.specialty || inst.major || '',
+    };
+  },
+
+  _mapGradeToTier(grade) {
+    const map = { 'Master': 'Master', 'Standard': 'Advanced', 'Trainee': 'General' };
+    return map[grade] || grade || 'General';
+  },
 
   async loadAll() {
-    // 1) Try localStorage first (persisted data)
-    const saved = localStorage.getItem(this.STORAGE_KEY);
-    if (saved) {
+    // 1) Try shared Admin localStorage keys first
+    const shared = localStorage.getItem(this.KEYS.INSTRUCTORS);
+    if (shared) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsedInst = JSON.parse(shared);
+        if (parsedInst && parsedInst.length > 0) {
+          this.instructors = parsedInst.map(i => this._fromSharedFormat(i));
+          this.activityLogs = JSON.parse(localStorage.getItem(this.KEYS.ACTIVITY_LOG) || '[]');
+          this.abilityLogs = JSON.parse(localStorage.getItem(this.KEYS.ABILITY_LOG) || '[]');
+          this.recalculateAll();
+          console.log(`[Store] 공유 데이터 로드 (강사 ${this.instructors.length}명)`);
+          return true;
+        }
+      } catch (e) {
+        console.warn('[Store] 공유 데이터 파싱 실패');
+      }
+    }
+
+    // 2) Migration: Try old DORO_DATA_V2 key
+    const legacy = localStorage.getItem(this.LEGACY_KEY);
+    if (legacy) {
+      try {
+        const parsed = JSON.parse(legacy);
         this.instructors = parsed.instructors || [];
         this.activityLogs = parsed.activityLogs || [];
         this.abilityLogs = parsed.abilityLogs || [];
         this.recalculateAll();
-        console.log(`[Store] localStorage 데이터 로드 (강사 ${this.instructors.length}명)`);
+        this.save(); // Migrate to shared keys
+        console.log(`[Store] 레거시 데이터 마이그레이션 완료 (강사 ${this.instructors.length}명)`);
         return true;
       } catch (e) {
-        console.warn('[Store] localStorage 파싱 실패, JSON 파일에서 로드');
+        console.warn('[Store] 레거시 데이터 파싱 실패');
       }
     }
 
-    // 2) Fallback: fetch from JSON files
+    // 3) Fallback: fetch from JSON files
     try {
       const [instrRes, actRes, abiRes] = await Promise.all([
         fetch('../data/instructor_db.json'),
@@ -43,11 +101,10 @@ const Store = {
       this.abilityLogs = abiData.logs || [];
 
       this.recalculateAll();
-      this.save(); // Save initial data to localStorage
+      this.save();
       return true;
     } catch (err) {
       console.error('Data load error:', err);
-      // Use embedded sample data for demo
       this.instructors = SAMPLE_DATA.instructors;
       this.activityLogs = SAMPLE_DATA.activityLogs;
       this.abilityLogs = SAMPLE_DATA.abilityLogs;
@@ -57,23 +114,23 @@ const Store = {
     }
   },
 
-  // Persist all data to localStorage
+  // Persist to shared localStorage keys (synced with Admin)
   save() {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
-        instructors: this.instructors,
-        activityLogs: this.activityLogs,
-        abilityLogs: this.abilityLogs,
-        savedAt: new Date().toISOString(),
-      }));
+      // Save instructors with both field naming conventions
+      const sharedInstructors = this.instructors.map(i => this._toSharedFormat(i));
+      localStorage.setItem(this.KEYS.INSTRUCTORS, JSON.stringify(sharedInstructors));
+      localStorage.setItem(this.KEYS.ACTIVITY_LOG, JSON.stringify(this.activityLogs));
+      localStorage.setItem(this.KEYS.ABILITY_LOG, JSON.stringify(this.abilityLogs));
     } catch (e) {
       console.error('[Store] localStorage 저장 실패:', e);
     }
   },
 
-  // Clear localStorage and reload from JSON files
+  // Clear all shared data and reload
   async resetData() {
-    localStorage.removeItem(this.STORAGE_KEY);
+    Object.values(this.KEYS).forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem(this.LEGACY_KEY);
     await this.loadAll();
   },
 
