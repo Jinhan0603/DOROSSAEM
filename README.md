@@ -3,6 +3,7 @@
 > 강사 역량 데이터를 기반으로 강의 배정 → 등급 관리 → 운영 자동화를 단계적으로 달성하는 시스템
 
 ### 🔗 [▶ 강사관리 도구 바로가기](https://jinhan0603.github.io/DOROSSAEM/app/index.html)
+### 🛡️ [▶ Admin 관리자 대시보드](https://jinhan0603.github.io/DOROSSAEM/app/admin/index.html)
 
 ## 📋 프로젝트 개요
 
@@ -24,29 +25,43 @@
 
 ```
 DORO 강사관리 시스템 개선/
-├── app/                    # HTML/JS 관리 도구
-│   ├── index.html          # 메인 대시보드
-│   ├── style.css           # 디자인 시스템
-│   └── app.js              # CRUD 로직
-├── data/                   # JSON 데이터 파일
-│   ├── instructor_db.json  # 강사 DB
-│   ├── activity_log.json   # 활동 로그
-│   └── ability_log.json    # 역량 로그
-├── docs/                   # 문서
-│   ├── DB_SCHEMA_V2.md     # DB 스키마 정의서
-│   ├── SCORING_RULES_V2.md # 점수/등급 규칙
-│   └── ROADMAP.md          # 1~4단계 로드맵
-├── schema/                 # 스키마 정의
+├── app/                        # HTML/JS 관리 도구
+│   ├── index.html              # 메인 대시보드
+│   ├── style.css               # 디자인 시스템
+│   ├── app.js                  # CRUD 로직
+│   ├── scoring-rules.js        # 점수 규칙
+│   ├── scheduling-model.js     # 일정 데이터 모델
+│   ├── scheduling-app.js       # 일정 UI
+│   └── admin/                  # 🛡️ 관리자 대시보드
+│       ├── index.html          # Admin 메인 페이지
+│       ├── style.css           # 다크모드 디자인
+│       ├── app.js              # 대시보드/강의/평가 로직
+│       ├── data-model.js       # LocalStorage CRUD
+│       ├── scoring-rules.js    # 점수 규칙 설정
+│       ├── scheduling-model.js # 추천 엔진
+│       ├── scheduling-app.js   # 공고/배정/가용시간 UI
+│       └── README.md           # 📖 사용법 매뉴얼
+├── data/                       # JSON 데이터 파일
+│   ├── instructor_db.json      # 강사 DB
+│   ├── activity_log.json       # 활동 로그
+│   └── ability_log.json        # 역량 로그
+├── docs/                       # 문서
+│   ├── DB_SCHEMA_V2.md         # DB 스키마 정의서
+│   ├── SCORING_RULES_V2.md     # 점수/등급 규칙
+│   └── ROADMAP.md              # 1~4단계 로드맵
+├── schema/                     # 스키마 정의
 │   └── instructor_db.schema.json
-├── reference/              # 원본 기획서
-├── archive/                # 구버전 파일 보관
+├── reference/                  # 원본 기획서
+├── archive/                    # 구버전 파일 보관
 └── README.md
 ```
 
 ## 🚀 사용 방법
 
 ### 온라인 (GitHub Pages)
-👉 **https://jinhan0603.github.io/DOROSSAEM/app/index.html**
+👉 **강사관리 도구**: https://jinhan0603.github.io/DOROSSAEM/app/index.html
+
+👉 **Admin 대시보드**: https://jinhan0603.github.io/DOROSSAEM/app/admin/index.html
 
 ### 로컬 실행
 ```bash
