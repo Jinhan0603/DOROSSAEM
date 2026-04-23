@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOROSSAEM Admin - Australia EdTech Demo</title>
+    <meta name="description" content="English demo dashboard for DOROSSAEM instructor management, scheduling, scoring, and delivery operations in Australia.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <span class="logo-icon">AU</span>
+                    DOROSSAEM
+                    <span class="sidebar-badge">Demo</span>
+                </div>
+                <div class="sidebar-caption">Australia stakeholder preview</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">Operations</div>
+                <div class="nav-item active" data-view="dashboard">
+                    <i class="ph ph-squares-four"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-view="lectures">
+                    <i class="ph ph-chalkboard-teacher"></i>
+                    <span>Program Delivery</span>
+                    <span class="nav-badge amber" id="badge-lectures">0</span>
+                </div>
+                <div class="nav-item" data-view="evaluations">
+                    <i class="ph ph-star"></i>
+                    <span>Evaluations</span>
+                    <span class="nav-badge amber" id="badge-evaluations">0</span>
+                </div>
+                <div class="nav-item" data-view="requests">
+                    <i class="ph ph-clock-countdown"></i>
+                    <span>Approval Queue</span>
+                    <span class="nav-badge red" id="badge-requests">0</span>
+                </div>
+
+                <div class="nav-section-label">Scheduling</div>
+                <div class="nav-item" data-view="schedule-requests">
+                    <i class="ph ph-megaphone"></i>
+                    <span>Program Requests</span>
+                    <span class="nav-badge blue" id="badge-requests-open">0</span>
+                </div>
+                <div class="nav-item" data-view="schedule-assign">
+                    <i class="ph ph-calendar-check"></i>
+                    <span>Assignment Engine</span>
+                    <span class="nav-badge amber" id="badge-sessions-open">0</span>
+                </div>
+                <div class="nav-item" data-view="availability">
+                    <i class="ph ph-clock"></i>
+                    <span>Availability</span>
+                </div>
+                <div class="nav-item" data-view="ledger">
+                    <i class="ph ph-receipt"></i>
+                    <span>Delivery Ledger</span>
+                </div>
+
+                <div class="nav-section-label">Instructors</div>
+                <div class="nav-item" data-view="instructors">
+                    <i class="ph ph-users"></i>
+                    <span>Instructor Roster</span>
+                </div>
+                <div class="nav-item" data-view="incidents">
+                    <i class="ph ph-warning-circle"></i>
+                    <span>Bonus / Incidents</span>
+                </div>
+
+                <div class="nav-section-label">Reporting</div>
+                <div class="nav-item" data-view="reports">
+                    <i class="ph ph-chart-line-up"></i>
+                    <span>Monthly Report</span>
+                </div>
+                <div class="nav-item" data-view="settings">
+                    <i class="ph ph-gear-six"></i>
+                    <span>Demo Settings</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="sidebar-footer-btn" id="btn-backup">
+                    <i class="ph ph-download-simple"></i>
+                    Export demo CSV
+                </button>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <header class="top-header">
+                <div class="page-title-area">
+                    <button class="btn btn-icon hidden" id="btn-menu-toggle" style="display:none;">
+                        <i class="ph ph-list"></i>
+                    </button>
+                    <div>
+                        <h1 class="page-title" id="page-title">Dashboard</h1>
+                        <p class="page-subtitle" id="page-subtitle">Demo snapshot for Australian education partners</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="search-bar">
+                        <i class="ph ph-magnifying-glass"></i>
+                        <input type="text" placeholder="Search instructors, skills, state..." id="global-search">
+                    </div>
+                    <button class="btn btn-primary" id="btn-quick-add">
+                        <i class="ph ph-plus"></i> Demo Action
+                    </button>
+                </div>
+            </header>
+
+            <main class="content-area" id="content-area">
+                <section class="view-section active" id="view-dashboard">
+                    <div class="demo-banner">
+                        <div>
+                            <div class="demo-eyebrow">Australia EdTech Preview</div>
+                            <h2>50 verified STEM instructors, one operational dashboard.</h2>
+                            <p>
+                                This English demo shows how DOROSSAEM tracks instructor quality, assigns staff to school programs,
+                                collects evaluations, and keeps a delivery ledger for Australian education operations.
+                            </p>
+                        </div>
+                        <div class="demo-banner-metrics">
+                            <span><strong>50</strong> instructors</span>
+                            <span><strong>8</strong> states / territories</span>
+                            <span><strong>AUD</strong> delivery ledger</span>
+                        </div>
+                    </div>
+
+                    <div class="queue-grid">
+                        <div class="queue-card red" data-action="go-lectures">
+                            <div class="queue-icon"><i class="ph ph-warning"></i></div>
+                            <div class="queue-count" id="q-incomplete">0</div>
+                            <div class="queue-label">Overdue sessions</div>
+                        </div>
+                        <div class="queue-card amber" data-action="go-evaluations">
+                            <div class="queue-icon"><i class="ph ph-star-half"></i></div>
+                            <div class="queue-count" id="q-eval">0</div>
+                            <div class="queue-label">Evaluation follow-ups</div>
+                        </div>
+                        <div class="queue-card blue" data-action="go-requests">
+                            <div class="queue-icon"><i class="ph ph-clock"></i></div>
+                            <div class="queue-count" id="q-pending">0</div>
+                            <div class="queue-label">Manager approvals</div>
+                        </div>
+                        <div class="queue-card green" data-action="go-incidents">
+                            <div class="queue-icon"><i class="ph ph-shield-check"></i></div>
+                            <div class="queue-count" id="q-incidents">0</div>
+                            <div class="queue-label">Open incidents</div>
+                        </div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:var(--accent-blue-dim); color:var(--accent-blue);">
+                                <i class="ph ph-users"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value" id="stat-total-instructors">0</div>
+                                <div class="stat-label">Registered instructors</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:var(--accent-amber-dim); color:var(--accent-amber);">
+                                <i class="ph ph-crown"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value" id="stat-masters">0</div>
+                                <div class="stat-label">Master instructors</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:var(--accent-green-dim); color:var(--accent-green);">
+                                <i class="ph ph-chalkboard-teacher"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value" id="stat-total-lectures">0</div>
+                                <div class="stat-label">Program sessions</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background:var(--accent-purple-dim); color:var(--accent-purple);">
+                                <i class="ph ph-chart-line-up"></i>
+                            </div>
+                            <div>
+                                <div class="stat-value" id="stat-avg-score">-</div>
+                                <div class="stat-label">Average quality score</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="insight-grid">
+                        <div class="insight-card">
+                            <i class="ph ph-database"></i>
+                            <strong>Instructor database</strong>
+                            <span>Profiles include skills, state, availability, grade, evaluation score, and assignment block status.</span>
+                        </div>
+                        <div class="insight-card">
+                            <i class="ph ph-magic-wand"></i>
+                            <strong>Assignment engine</strong>
+                            <span>Recommendations combine grade fit, STEM specialty, availability, location, and past delivery reliability.</span>
+                        </div>
+                        <div class="insight-card">
+                            <i class="ph ph-chart-donut"></i>
+                            <strong>Quality loop</strong>
+                            <span>Student, school, and peer evaluations flow back into instructor scoring and monthly reporting.</span>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-two-col">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="ph ph-clock-clockwise"></i> Recent Activity</div>
+                            </div>
+                            <div id="recent-activity" class="timeline"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="ph ph-trophy"></i> Top Instructors</div>
+                            </div>
+                            <div id="top-instructors"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-lectures">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="lectures-all">All</button>
+                            <button class="tab" data-tab="lectures-scheduled">Upcoming</button>
+                            <button class="tab" data-tab="lectures-completed">Completed</button>
+                        </div>
+                        <button class="btn btn-primary demo-only-btn">
+                            <i class="ph ph-plus"></i> Add Program
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Institution</th>
+                                    <th>Program</th>
+                                    <th>State</th>
+                                    <th>Type</th>
+                                    <th>Lead</th>
+                                    <th>Assistants</th>
+                                    <th>Status</th>
+                                    <th>Evaluation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lectures-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-evaluations">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="eval-pending">Pending follow-up</button>
+                            <button class="tab" data-tab="eval-all">All evaluations</button>
+                        </div>
+                        <button class="btn demo-only-btn">
+                            <i class="ph ph-upload-simple"></i> Import CSV
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Program</th>
+                                    <th>Date</th>
+                                    <th>Instructor</th>
+                                    <th>Student</th>
+                                    <th>School</th>
+                                    <th>Peer</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="evaluations-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-requests">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="req-pending">Pending</button>
+                            <button class="tab" data-tab="req-approved">Approved</button>
+                            <button class="tab" data-tab="req-rejected">Rejected</button>
+                        </div>
+                        <button class="btn btn-primary demo-only-btn">
+                            <i class="ph ph-plus"></i> Add Contribution
+                        </button>
+                    </div>
+                    <div id="requests-list"></div>
+                </section>
+
+                <section class="view-section" id="view-schedule-requests">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="sreq-all">All</button>
+                            <button class="tab" data-tab="sreq-draft">Draft</button>
+                            <button class="tab" data-tab="sreq-open">Open</button>
+                            <button class="tab" data-tab="sreq-closed">Closed</button>
+                        </div>
+                        <button class="btn btn-primary demo-only-btn">
+                            <i class="ph ph-plus"></i> New Request
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Institution</th>
+                                    <th>Program</th>
+                                    <th>Year Level</th>
+                                    <th>State</th>
+                                    <th>Service Level</th>
+                                    <th>Sessions</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedule-requests-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-schedule-assign">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="section-title"><i class="ph ph-calendar-check"></i> Assignment Engine</h2>
+                        <span class="demo-note">Recommendation scores are calculated from role, skill, availability, region, and reliability signals.</span>
+                    </div>
+                    <div id="schedule-assign-content"></div>
+                </section>
+
+                <section class="view-section" id="view-availability">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="section-title"><i class="ph ph-clock"></i> Instructor Availability</h2>
+                    </div>
+                    <div id="availability-content"></div>
+                </section>
+
+                <section class="view-section" id="view-ledger">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="section-title"><i class="ph ph-receipt"></i> Delivery Ledger</h2>
+                        <button class="btn" id="btn-export-ledger">
+                            <i class="ph ph-download-simple"></i> Export Ledger CSV
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Institution</th>
+                                    <th>Program</th>
+                                    <th>State</th>
+                                    <th>Students</th>
+                                    <th>Lead</th>
+                                    <th>Assistants</th>
+                                    <th>Hours</th>
+                                    <th>Instructor fees</th>
+                                    <th>School invoice</th>
+                                    <th>Margin</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ledger-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-instructors">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="tabs">
+                            <button class="tab active" data-tab="ins-all">All</button>
+                            <button class="tab" data-tab="ins-master">Master</button>
+                            <button class="tab" data-tab="ins-blocked">Blocked</button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="btn demo-only-btn">
+                                <i class="ph ph-upload-simple"></i> Import CSV
+                            </button>
+                            <button class="btn btn-primary demo-only-btn">
+                                <i class="ph ph-user-plus"></i> Add Instructor
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Instructor</th>
+                                    <th>State</th>
+                                    <th>Specialties</th>
+                                    <th>Total</th>
+                                    <th>Grade</th>
+                                    <th>Experience</th>
+                                    <th>Evaluation</th>
+                                    <th>Expertise</th>
+                                    <th>Contribution</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="instructors-tbody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-incidents">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="section-title"><i class="ph ph-warning-circle"></i> Bonus / Incident Management</h2>
+                        <button class="btn btn-primary demo-only-btn">
+                            <i class="ph ph-plus"></i> Record Incident
+                        </button>
+                    </div>
+                    <div class="incident-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title" style="color:var(--accent-green);">
+                                    <i class="ph ph-thumbs-up"></i> Bonus Records
+                                </div>
+                            </div>
+                            <div id="bonus-list"></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title" style="color:var(--accent-red);">
+                                    <i class="ph ph-thumbs-down"></i> Incident Records
+                                </div>
+                            </div>
+                            <div id="penalty-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="view-section" id="view-reports">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="section-title"><i class="ph ph-chart-line-up"></i> Monthly Report</h2>
+                        <button class="btn btn-primary demo-only-btn">
+                            <i class="ph ph-camera"></i> Create Snapshot
+                        </button>
+                    </div>
+                    <div id="reports-content"></div>
+                </section>
+
+                <section class="view-section" id="view-settings">
+                    <h2 class="section-title"><i class="ph ph-gear-six"></i> Demo Settings</h2>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <div class="card-title">Scoring Model</div>
+                        </div>
+                        <div class="score-grid">
+                            <div class="score-item">
+                                <div class="score-label">Delivery experience</div>
+                                <div class="score-value" style="color:var(--accent-blue);">20%</div>
+                            </div>
+                            <div class="score-item">
+                                <div class="score-label">Evaluations</div>
+                                <div class="score-value" style="color:var(--accent-green);">40%</div>
+                            </div>
+                            <div class="score-item">
+                                <div class="score-label">STEM expertise</div>
+                                <div class="score-value" style="color:var(--accent-amber);">20%</div>
+                            </div>
+                            <div class="score-item">
+                                <div class="score-label">Internal contribution</div>
+                                <div class="score-value" style="color:var(--accent-purple);">20%</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 demo-settings-note">
+                            Demo data is generated in-browser and does not store personal information. It is designed to show the operating model with 50 fictional Australian instructors.
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Data Actions</div>
+                        </div>
+                        <div class="flex gap-3" style="flex-wrap:wrap;">
+                            <button class="btn" id="btn-export-all"><i class="ph ph-download-simple"></i> Export Instructor CSV</button>
+                            <button class="btn" id="btn-reset-demo"><i class="ph ph-database"></i> Reload Demo Data</button>
+                            <button class="btn" id="btn-recalc-all"><i class="ph ph-calculator"></i> Recalculate Scores</button>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="profile-modal-overlay">
+        <div class="modal" id="profile-modal" style="max-width:860px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="profile-modal-title">Instructor Profile</h3>
+                <button class="modal-close" id="profile-modal-close"><i class="ph ph-x"></i></button>
+            </div>
+            <div class="modal-body" id="profile-modal-body"></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="demo-data.js?v=20260423"></script>
+    <script src="app.js?v=20260423"></script>
+</body>
+</html>
