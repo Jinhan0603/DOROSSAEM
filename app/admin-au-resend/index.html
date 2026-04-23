@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOROSSAEM Admin - Resend-Inspired Demo</title>
+    <meta name="description" content="A Resend-inspired minimal dark demo for Australian education partners, showing the DOROSSAEM instructor operations model in English.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="site-header">
+            <div class="brand-lockup">
+                <div class="brand-mark">D</div>
+                <div>
+                    <div class="brand-name">DOROSSAEM</div>
+                    <div class="brand-sub">Australia operations preview</div>
+                </div>
+            </div>
+            <nav class="header-nav">
+                <a href="#overview">Overview</a>
+                <a href="#pipeline">Pipeline</a>
+                <a href="#roster">Roster</a>
+                <a href="#ledger">Ledger</a>
+            </nav>
+            <div class="header-actions">
+                <a class="ghost-link" href="../admin-au/index.html">Original demo</a>
+                <button class="header-button" id="btn-export-csv">Export CSV</button>
+            </div>
+        </header>
+
+        <main class="page-main">
+            <section class="hero" id="overview">
+                <div class="hero-copy">
+                    <div class="eyebrow">RESEND-INSPIRED EDITION</div>
+                    <h1>
+                        One clean operating layer for
+                        <span>50 STEM instructors</span>
+                        across Australian school programs.
+                    </h1>
+                    <p>
+                        This version keeps the same fictional Australian data set, but reframes the interface in a quieter,
+                        developer-first visual language: sparse chrome, sharp typography, thin borders, and operational clarity.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="primary-button" href="#pipeline">See the workflow</a>
+                        <a class="secondary-button" href="#roster">Browse roster</a>
+                    </div>
+                    <div class="hero-tags">
+                        <span>50 instructors</span>
+                        <span>32 sessions</span>
+                        <span>Evaluation loop</span>
+                        <span>AUD ledger</span>
+                    </div>
+                </div>
+                <div class="hero-console">
+                    <div class="console-header">
+                        <span class="console-dot"></span>
+                        <span class="console-dot"></span>
+                        <span class="console-dot"></span>
+                        <span class="console-title">ops.snapshot</span>
+                    </div>
+                    <pre id="hero-console-output"></pre>
+                </div>
+            </section>
+
+            <section class="status-row">
+                <article class="status-card">
+                    <div class="status-label">Registered instructors</div>
+                    <div class="status-value" id="metric-instructors">0</div>
+                    <div class="status-note">Verified fictional Australian roster for demo use</div>
+                </article>
+                <article class="status-card">
+                    <div class="status-label">Master instructors</div>
+                    <div class="status-value" id="metric-masters">0</div>
+                    <div class="status-note">Senior staff eligible for higher-risk delivery</div>
+                </article>
+                <article class="status-card">
+                    <div class="status-label">Evaluation coverage</div>
+                    <div class="status-value" id="metric-eval-coverage">0%</div>
+                    <div class="status-note">Completed sessions with full student, school, and peer inputs</div>
+                </article>
+                <article class="status-card">
+                    <div class="status-label">Average quality score</div>
+                    <div class="status-value" id="metric-average-score">0</div>
+                    <div class="status-note">Composite score from delivery, evaluation, expertise, and contribution</div>
+                </article>
+            </section>
+
+            <section class="story-grid" id="pipeline">
+                <article class="panel panel-large">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">WORKFLOW</div>
+                            <h2>How the system operates</h2>
+                        </div>
+                    </div>
+                    <div class="workflow-grid" id="workflow-grid"></div>
+                </article>
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">QUEUE</div>
+                            <h2>Manager follow-up</h2>
+                        </div>
+                    </div>
+                    <div class="queue-list" id="queue-list"></div>
+                </article>
+            </section>
+
+            <section class="dual-grid">
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">MATCHING ENGINE</div>
+                            <h2>Upcoming staffing recommendations</h2>
+                        </div>
+                    </div>
+                    <div class="assignment-list" id="assignment-list"></div>
+                </article>
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">ACTIVITY</div>
+                            <h2>Recent operator-visible events</h2>
+                        </div>
+                    </div>
+                    <div class="activity-list" id="activity-list"></div>
+                </article>
+            </section>
+
+            <section class="dual-grid">
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">APPROVALS</div>
+                            <h2>Queue snapshot</h2>
+                        </div>
+                    </div>
+                    <div class="approval-list" id="approval-list"></div>
+                </article>
+                <article class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">STATE COVERAGE</div>
+                            <h2>Roster distribution</h2>
+                        </div>
+                    </div>
+                    <div class="distribution-list" id="distribution-list"></div>
+                </article>
+            </section>
+
+            <section class="panel" id="roster">
+                <div class="panel-header panel-header-row">
+                    <div>
+                        <div class="panel-kicker">INSTRUCTOR ROSTER</div>
+                        <h2>Fifty fictional instructors, ranked and searchable</h2>
+                    </div>
+                    <div class="table-controls">
+                        <input type="text" id="roster-search" placeholder="Search by name, state, or specialty">
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Instructor</th>
+                                <th>State</th>
+                                <th>Specialties</th>
+                                <th>Total</th>
+                                <th>Grade</th>
+                                <th>Evaluation</th>
+                                <th>Availability</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roster-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel" id="ledger">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-kicker">DELIVERY LEDGER</div>
+                        <h2>Completed sessions and operational margin</h2>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Institution</th>
+                                <th>Program</th>
+                                <th>State</th>
+                                <th>Students</th>
+                                <th>Lead</th>
+                                <th>Assistants</th>
+                                <th>Fees</th>
+                                <th>Invoice</th>
+                                <th>Margin</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ledger-tbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="footer-note">
+                <p>
+                    This is a separate visual concept inspired by the minimal dark tone described on getdesign.md for Resend.
+                    It is not an official Resend design system or a direct copy.
+                </p>
+            </section>
+        </main>
+    </div>
+
+    <script src="../admin-au/demo-data.js?v=20260423"></script>
+    <script src="app.js?v=20260423b"></script>
+</body>
+</html>
